@@ -40,10 +40,24 @@ export class AnalyticsService {
   async getDashboardKPIs(user: any, startDate?: string, endDate?: string) {
     const whereClause = this.getWhereClause(user, startDate, endDate);
 
-    // Get total puskesmas count based on scope
+    // Get total puskesmas count & total registered houses based on scope
     let jumlahPuskesmas = 1;
+    let totalTargetHouses = 0;
+
     if (user.role === 'ADMIN') {
       jumlahPuskesmas = await this.prisma.healthCenter.count();
+      // Sum targetHouses from ALL health centers for kabupaten-level ABJ Wilayah
+      const allPkm = await this.prisma.healthCenter.findMany({
+        select: { targetHouses: true },
+      });
+      totalTargetHouses = allPkm.reduce((sum, p) => sum + (p.targetHouses ?? 0), 0);
+    } else if (user.healthCenterId) {
+      // For PKM-level, use own targetHouses
+      const pkm = await this.prisma.healthCenter.findUnique({
+        where: { id: user.healthCenterId },
+        select: { targetHouses: true },
+      });
+      totalTargetHouses = pkm?.targetHouses ?? 0;
     }
 
     const surveys = await this.prisma.survey.findMany({
@@ -55,12 +69,13 @@ export class AnalyticsService {
       return {
         totalSurveys: 0,
         abjSurvei: 0,
-        abjWilayah: 0,
+        abjWilayah: totalTargetHouses > 0 ? 100 : null,
         houseIndex: 0,
         containerIndex: 0,
         breteauIndex: 0,
         positiveHouses: 0,
         jumlahPuskesmas,
+        totalTargetHouses,
         densityFigure: 0,
         mayaIndex: 'Low',
       };
@@ -79,7 +94,16 @@ export class AnalyticsService {
     });
 
     const totalSurveys = surveys.length;
-    const abj = ((totalSurveys - positiveHouses) / totalSurveys) * 100;
+
+    // ABJ Survei: based on houses actually surveyed
+    const abjSurvei = ((totalSurveys - positiveHouses) / totalSurveys) * 100;
+
+    // ABJ Wilayah: based on total REGISTERED houses in the area (targetHouses)
+    const abjWilayah =
+      totalTargetHouses > 0
+        ? ((totalTargetHouses - positiveHouses) / totalTargetHouses) * 100
+        : null;
+
     const hi = (positiveHouses / totalSurveys) * 100;
     const ci =
       totalContainersInspected > 0
@@ -92,13 +116,14 @@ export class AnalyticsService {
 
     return {
       totalSurveys,
-      abjSurvei: parseFloat(abj.toFixed(2)),
-      abjWilayah: parseFloat(abj.toFixed(2)), // For now, regional average is the same as the filtered scope
+      abjSurvei: parseFloat(abjSurvei.toFixed(2)),
+      abjWilayah: abjWilayah !== null ? parseFloat(abjWilayah.toFixed(2)) : null,
       houseIndex: parseFloat(hi.toFixed(2)),
       containerIndex: parseFloat(ci.toFixed(2)),
       breteauIndex: parseFloat(bi.toFixed(2)),
       positiveHouses,
       jumlahPuskesmas,
+      totalTargetHouses,
       densityFigure,
       mayaIndex,
     };
@@ -107,6 +132,7 @@ export class AnalyticsService {
   async getRegionalPerformance(user: any) {
     if (user.role === 'ADMIN') {
       // Show stats grouped by health center (PKM)
+      // Include targetHouses so ABJ Wilayah can use real registered house count
       const healthCenters = await this.prisma.healthCenter.findMany({
         include: {
           accessCodes: {
@@ -116,10 +142,11 @@ export class AnalyticsService {
       });
       return healthCenters.map((pkm) => {
         const surveys = pkm.accessCodes.flatMap((ac) => ac.surveys);
-        return this.calculateRegionStats(pkm.name, surveys);
+        return this.calculateRegionStats(pkm.name, surveys, pkm.targetHouses);
       });
     } else {
       // Show stats grouped by village for this PKM's surveys
+      // Villages don't have their own house count, so ABJ Wilayah = null at village level
       const surveys = await this.prisma.survey.findMany({
         where: { accessCode: { healthCenterId: user.healthCenterId } },
         include: { containers: true, village: true },
@@ -131,27 +158,77 @@ export class AnalyticsService {
         return acc;
       }, {});
       return Object.entries(grouped).map(([name, surveysInVillage]) =>
-        this.calculateRegionStats(name, surveysInVillage),
+        this.calculateRegionStats(name, surveysInVillage, undefined),
       );
     }
   }
 
-  private calculateRegionStats(name: string, surveys: any[]) {
-    if (surveys.length === 0)
-      return { name, abj: 0, totalSurveys: 0, riskLevel: 'UNKNOWN' };
+  private calculateRegionStats(
+    name: string,
+    surveys: any[],
+    targetHouses?: number,
+  ) {
+    if (surveys.length === 0) {
+      return {
+        name,
+        totalSurveys: 0,
+        targetHouses: targetHouses ?? 0,
+        abj: 0,
+        abjWilayah: targetHouses && targetHouses > 0 ? 100 : null,
+        houseIndex: 0,
+        containerIndex: 0,
+        breteauIndex: 0,
+        densityFigure: 0,
+        riskLevel: 'UNKNOWN',
+      };
+    }
+
+    const totalSurveys = surveys.length;
     const positiveHouses = surveys.filter((s) =>
       s.containers.some((c) => c.positiveCount > 0),
     ).length;
-    const abj = ((surveys.length - positiveHouses) / surveys.length) * 100;
+
+    let totalContainersInspected = 0;
+    let totalContainersPositive = 0;
+    surveys.forEach((s) => {
+      s.containers.forEach((c) => {
+        totalContainersInspected += c.inspectedCount;
+        totalContainersPositive += c.positiveCount;
+      });
+    });
+
+    // ABJ Survei: (rumah disurvei - positif) / rumah disurvei × 100
+    const abjSurvei = ((totalSurveys - positiveHouses) / totalSurveys) * 100;
+
+    // ABJ Wilayah: (targetHouses - positif) / targetHouses × 100
+    // Uses the REGISTERED house count from HealthCenter, not surveyed count
+    const abjWilayah =
+      targetHouses && targetHouses > 0
+        ? ((targetHouses - positiveHouses) / targetHouses) * 100
+        : null;
+
+    const hi = (positiveHouses / totalSurveys) * 100;
+    const ci =
+      totalContainersInspected > 0
+        ? (totalContainersPositive / totalContainersInspected) * 100
+        : 0;
+    const bi = (totalContainersPositive / totalSurveys) * 100;
+    const densityFigure = this.calculateDF(hi, ci, bi);
 
     let riskLevel = 'TARGET';
-    if (abj < 80) riskLevel = 'CRITICAL';
-    else if (abj < 95) riskLevel = 'WARNING';
+    if (abjSurvei < 80) riskLevel = 'CRITICAL';
+    else if (abjSurvei < 95) riskLevel = 'WARNING';
 
     return {
       name,
-      totalSurveys: surveys.length,
-      abj: parseFloat(abj.toFixed(2)),
+      totalSurveys,
+      targetHouses: targetHouses ?? 0,
+      abj: parseFloat(abjSurvei.toFixed(2)),
+      abjWilayah: abjWilayah !== null ? parseFloat(abjWilayah.toFixed(2)) : null,
+      houseIndex: parseFloat(hi.toFixed(2)),
+      containerIndex: parseFloat(ci.toFixed(2)),
+      breteauIndex: parseFloat(bi.toFixed(2)),
+      densityFigure,
       riskLevel,
     };
   }

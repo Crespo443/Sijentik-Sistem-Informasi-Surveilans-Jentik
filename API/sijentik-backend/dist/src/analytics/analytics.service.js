@@ -58,8 +58,20 @@ let AnalyticsService = class AnalyticsService {
     async getDashboardKPIs(user, startDate, endDate) {
         const whereClause = this.getWhereClause(user, startDate, endDate);
         let jumlahPuskesmas = 1;
+        let totalTargetHouses = 0;
         if (user.role === 'ADMIN') {
             jumlahPuskesmas = await this.prisma.healthCenter.count();
+            const allPkm = await this.prisma.healthCenter.findMany({
+                select: { targetHouses: true },
+            });
+            totalTargetHouses = allPkm.reduce((sum, p) => sum + (p.targetHouses ?? 0), 0);
+        }
+        else if (user.healthCenterId) {
+            const pkm = await this.prisma.healthCenter.findUnique({
+                where: { id: user.healthCenterId },
+                select: { targetHouses: true },
+            });
+            totalTargetHouses = pkm?.targetHouses ?? 0;
         }
         const surveys = await this.prisma.survey.findMany({
             where: whereClause,
@@ -69,12 +81,13 @@ let AnalyticsService = class AnalyticsService {
             return {
                 totalSurveys: 0,
                 abjSurvei: 0,
-                abjWilayah: 0,
+                abjWilayah: totalTargetHouses > 0 ? 100 : null,
                 houseIndex: 0,
                 containerIndex: 0,
                 breteauIndex: 0,
                 positiveHouses: 0,
                 jumlahPuskesmas,
+                totalTargetHouses,
                 densityFigure: 0,
                 mayaIndex: 'Low',
             };
@@ -92,7 +105,10 @@ let AnalyticsService = class AnalyticsService {
             });
         });
         const totalSurveys = surveys.length;
-        const abj = ((totalSurveys - positiveHouses) / totalSurveys) * 100;
+        const abjSurvei = ((totalSurveys - positiveHouses) / totalSurveys) * 100;
+        const abjWilayah = totalTargetHouses > 0
+            ? ((totalTargetHouses - positiveHouses) / totalTargetHouses) * 100
+            : null;
         const hi = (positiveHouses / totalSurveys) * 100;
         const ci = totalContainersInspected > 0
             ? (totalContainersPositive / totalContainersInspected) * 100
@@ -102,13 +118,14 @@ let AnalyticsService = class AnalyticsService {
         const mayaIndex = this.calculateMayaIndex(densityFigure);
         return {
             totalSurveys,
-            abjSurvei: parseFloat(abj.toFixed(2)),
-            abjWilayah: parseFloat(abj.toFixed(2)),
+            abjSurvei: parseFloat(abjSurvei.toFixed(2)),
+            abjWilayah: abjWilayah !== null ? parseFloat(abjWilayah.toFixed(2)) : null,
             houseIndex: parseFloat(hi.toFixed(2)),
             containerIndex: parseFloat(ci.toFixed(2)),
             breteauIndex: parseFloat(bi.toFixed(2)),
             positiveHouses,
             jumlahPuskesmas,
+            totalTargetHouses,
             densityFigure,
             mayaIndex,
         };
@@ -124,7 +141,7 @@ let AnalyticsService = class AnalyticsService {
             });
             return healthCenters.map((pkm) => {
                 const surveys = pkm.accessCodes.flatMap((ac) => ac.surveys);
-                return this.calculateRegionStats(pkm.name, surveys);
+                return this.calculateRegionStats(pkm.name, surveys, pkm.targetHouses);
             });
         }
         else {
@@ -139,23 +156,59 @@ let AnalyticsService = class AnalyticsService {
                 acc[key].push(s);
                 return acc;
             }, {});
-            return Object.entries(grouped).map(([name, surveysInVillage]) => this.calculateRegionStats(name, surveysInVillage));
+            return Object.entries(grouped).map(([name, surveysInVillage]) => this.calculateRegionStats(name, surveysInVillage, undefined));
         }
     }
-    calculateRegionStats(name, surveys) {
-        if (surveys.length === 0)
-            return { name, abj: 0, totalSurveys: 0, riskLevel: 'UNKNOWN' };
+    calculateRegionStats(name, surveys, targetHouses) {
+        if (surveys.length === 0) {
+            return {
+                name,
+                totalSurveys: 0,
+                targetHouses: targetHouses ?? 0,
+                abj: 0,
+                abjWilayah: targetHouses && targetHouses > 0 ? 100 : null,
+                houseIndex: 0,
+                containerIndex: 0,
+                breteauIndex: 0,
+                densityFigure: 0,
+                riskLevel: 'UNKNOWN',
+            };
+        }
+        const totalSurveys = surveys.length;
         const positiveHouses = surveys.filter((s) => s.containers.some((c) => c.positiveCount > 0)).length;
-        const abj = ((surveys.length - positiveHouses) / surveys.length) * 100;
+        let totalContainersInspected = 0;
+        let totalContainersPositive = 0;
+        surveys.forEach((s) => {
+            s.containers.forEach((c) => {
+                totalContainersInspected += c.inspectedCount;
+                totalContainersPositive += c.positiveCount;
+            });
+        });
+        const abjSurvei = ((totalSurveys - positiveHouses) / totalSurveys) * 100;
+        const abjWilayah = targetHouses && targetHouses > 0
+            ? ((targetHouses - positiveHouses) / targetHouses) * 100
+            : null;
+        const hi = (positiveHouses / totalSurveys) * 100;
+        const ci = totalContainersInspected > 0
+            ? (totalContainersPositive / totalContainersInspected) * 100
+            : 0;
+        const bi = (totalContainersPositive / totalSurveys) * 100;
+        const densityFigure = this.calculateDF(hi, ci, bi);
         let riskLevel = 'TARGET';
-        if (abj < 80)
+        if (abjSurvei < 80)
             riskLevel = 'CRITICAL';
-        else if (abj < 95)
+        else if (abjSurvei < 95)
             riskLevel = 'WARNING';
         return {
             name,
-            totalSurveys: surveys.length,
-            abj: parseFloat(abj.toFixed(2)),
+            totalSurveys,
+            targetHouses: targetHouses ?? 0,
+            abj: parseFloat(abjSurvei.toFixed(2)),
+            abjWilayah: abjWilayah !== null ? parseFloat(abjWilayah.toFixed(2)) : null,
+            houseIndex: parseFloat(hi.toFixed(2)),
+            containerIndex: parseFloat(ci.toFixed(2)),
+            breteauIndex: parseFloat(bi.toFixed(2)),
+            densityFigure,
             riskLevel,
         };
     }

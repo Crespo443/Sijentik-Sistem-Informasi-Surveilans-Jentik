@@ -10,6 +10,7 @@ const Dashboard = () => {
   const [regionalData, setRegionalData] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chartMetric, setChartMetric] = useState<'abj' | 'abjWilayah' | 'densityFigure'>('abj');
 
   // Example Filter States
   const [filterPeriod, setFilterPeriod] = useState('this_week');
@@ -49,18 +50,59 @@ const Dashboard = () => {
     <div className="max-w-350 mx-auto space-y-6">
       {/* ===== WEATHER & FILTER ACTIONS ===== */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 animate-fade-in">
-        {/* Seasonal Context Alert */}
-        <div className="flex-1 w-full bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-3 shadow-sm">
-          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0 text-blue-600">
-            <span className="material-symbols-outlined">thunderstorm</span>
-          </div>
-          <div>
-            <p className="text-sm font-bold text-blue-900">Musim Hujan Berlangsung</p>
-            <p className="text-xs text-blue-700">
-              Risiko kejadian jentik diprediksi <strong className="text-blue-900">meningkat 23%</strong> minggu ini. Prioritaskan survei di daerah Kritis.
-            </p>
-          </div>
-        </div>
+        {/* Dynamic Risk Alert Banner */}
+        {(() => {
+          const df = kpis?.densityFigure ?? 0;
+          const abj = kpis?.abjSurvei ?? 100;
+          const month = new Date().getMonth() + 1; // 1-indexed
+          const isRainySeason = month >= 10 || month <= 4;
+
+          // Risk from DF (WHO standard scale 1–9)
+          const dfRisk = df >= 6 ? 'CRITICAL' : df >= 3 ? 'WARNING' : 'RENDAH';
+          // Also flag if ABJ is below target
+          const abjRisk = abj < 80 ? 'CRITICAL' : abj < 95 ? 'WARNING' : 'RENDAH';
+          const overallRisk = dfRisk === 'CRITICAL' || abjRisk === 'CRITICAL' ? 'CRITICAL'
+            : dfRisk === 'WARNING' || abjRisk === 'WARNING' ? 'WARNING' : 'RENDAH';
+
+          const riskConfig = {
+            CRITICAL: {
+              bg: 'bg-red-50', border: 'border-red-300', iconBg: 'bg-red-100', iconColor: 'text-red-600',
+              titleColor: 'text-red-900', textColor: 'text-red-700', strongColor: 'text-red-900',
+              icon: 'warning', badge: 'bg-red-100 text-red-700 border-red-200',
+              label: 'Kritis', title: 'Tingkat Risiko Jentik: KRITIS',
+              desc: `DF=${df} (skala WHO), ABJ=${abj}% — jauh di bawah target nasional 95%. Segera tingkatkan frekuensi survei.`,
+            },
+            WARNING: {
+              bg: 'bg-amber-50', border: 'border-amber-300', iconBg: 'bg-amber-100', iconColor: 'text-amber-600',
+              titleColor: 'text-amber-900', textColor: 'text-amber-700', strongColor: 'text-amber-900',
+              icon: 'notification_important', badge: 'bg-amber-100 text-amber-700 border-amber-200',
+              label: 'Waspada', title: 'Tingkat Risiko Jentik: WASPADA',
+              desc: `DF=${df} (skala WHO), ABJ=${abj}% — belum mencapai target 95%. Pantau wilayah dengan ABJ rendah.`,
+            },
+            RENDAH: {
+              bg: 'bg-blue-50', border: 'border-blue-200', iconBg: 'bg-blue-100', iconColor: 'text-blue-600',
+              titleColor: 'text-blue-900', textColor: 'text-blue-700', strongColor: 'text-blue-900',
+              icon: isRainySeason ? 'thunderstorm' : 'wb_sunny', badge: 'bg-blue-100 text-blue-700 border-blue-200',
+              label: 'Rendah', title: isRainySeason ? 'Musim Hujan — Risiko Terkendali' : 'Musim Kemarau — Kondisi Baik',
+              desc: `DF=${df}, ABJ=${abj}% — telah memenuhi target nasional ≥95%. Pertahankan survei rutin.`,
+            },
+          };
+          const cfg = riskConfig[overallRisk];
+          return (
+            <div className={`flex-1 w-full ${cfg.bg} border ${cfg.border} rounded-lg p-3 flex items-center gap-3 shadow-sm`}>
+              <div className={`w-10 h-10 rounded-full ${cfg.iconBg} flex items-center justify-center shrink-0 ${cfg.iconColor}`}>
+                <span className="material-symbols-outlined">{cfg.icon}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className={`text-sm font-bold ${cfg.titleColor}`}>{cfg.title}</p>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${cfg.badge}`}>{cfg.label}</span>
+                </div>
+                <p className={`text-xs ${cfg.textColor} mt-0.5`}>{cfg.desc}</p>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Quick Filter */}
         <div className="shrink-0 flex items-center gap-2 z-30 relative min-w-[200px]">
@@ -87,8 +129,8 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
         <KPICard title="Total Survei" icon="water_drop" value={kpis?.totalSurveys || 0} subtitle="Rumah diperiksa" tooltipText="Total akumulasi rumah tangga yang telah diperiksa dalam periode yang dipilih." />
         <KPICard title="Rumah Positif" icon="pest_control" value={kpis?.positiveHouses || 0} color="danger" subtitle="Ditemukan jentik" tooltipText="Jumlah rumah yang didapati positif keberadaan jentik nyamuk pada tempat penampungan air." />
-        <KPICard title="ABJ Survei" icon="checklist" value={`${kpis?.abjSurvei || 0}%`} color={kpis?.abjSurvei >= 95 ? "success" : "danger"} subtitle="Angka Bebas Jentik" progress={kpis?.abjSurvei || 0} tooltipText="Angka Bebas Jentik (ABJ): Persentase rumah yang terbebas dari jentik nyamuk (Target Nasional: ≥ 95%)." />
-        <KPICard title="ABJ Wilayah" icon="map" value={`${kpis?.abjWilayah || 0}%`} color={kpis?.abjWilayah >= 95 ? "success" : "danger"} subtitle="Rata-rata regional" progress={kpis?.abjWilayah || 0} tooltipText="Rata-rata Angka Bebas Jentik gabungan dari seluruh wilayah Puskesmas / Kecamatan target." />
+        <KPICard title="ABJ Survei" icon="checklist" value={`${kpis?.abjSurvei ?? 0}%`} color={(kpis?.abjSurvei ?? 0) >= 95 ? "success" : "danger"} subtitle="Dari rumah disurvei" progress={kpis?.abjSurvei || 0} tooltipText="ABJ Survei: % rumah bebas jentik dari total rumah yang SUDAH disurvei. Formula: (survei - positif) / survei × 100%." />
+        <KPICard title="ABJ Wilayah" icon="map" value={kpis?.abjWilayah !== null && kpis?.abjWilayah !== undefined ? `${kpis.abjWilayah}%` : 'N/A'} color={kpis?.abjWilayah !== null && kpis?.abjWilayah !== undefined ? ((kpis.abjWilayah >= 95) ? "success" : "danger") : "primary"} subtitle={`Dari ${kpis?.totalTargetHouses ?? 0} rumah terdaftar`} progress={kpis?.abjWilayah || 0} tooltipText="ABJ Wilayah: % rumah bebas jentik dari TOTAL rumah terdaftar di wilayah Puskesmas. Formula: (total rumah - positif) / total rumah × 100%." />
       </div>
 
       {/* ===== OPERATIONAL OVERVIEW ===== */}
@@ -104,7 +146,7 @@ const Dashboard = () => {
             <KPICard title="Density Figure (DF)" icon="bar_chart" value={kpis?.densityFigure || 0} color="warning" subtitle="Skala 1-9" tooltipText="Density Figure (DF): Skala angka kepadatan jentik (1-9) yang ditentukan dari rata-rata gabungan nilai HI, CI, dan BI untuk melihat tingkat kewaspadaan." />
             <KPICard title="Maya Index" icon="query_stats" value={kpis?.mayaIndex || 'Low'} color={kpis?.mayaIndex === 'Low' ? 'success' : kpis?.mayaIndex === 'Medium' ? 'warning' : 'danger'} subtitle="Tingkat Risiko" tooltipText="Maya Index: Menilai tingkat potensi tempat perkembangbiakan nyamuk berdasarkan keseimbangan/ketersediaan jenis objek tampungan." />
           </div>
-          <RegionalSummary data={regionalData} />
+          <RegionalSummary data={regionalData} metric={chartMetric} onMetricChange={setChartMetric} />
         </div>
 
         {/* ====== RIGHT COLUMN: Activity Feed ====== */}
@@ -116,27 +158,88 @@ const Dashboard = () => {
 
 // -- Mini Components for Dashboard --
 
-const RegionalSummary = ({ data }: { data: any[] }) => {
+type ChartMetric = 'abj' | 'abjWilayah' | 'densityFigure';
+
+const METRIC_OPTIONS: { value: ChartMetric; label: string; unit: string }[] = [
+  { value: 'abj',          label: 'ABJ Survei',   unit: '%' },
+  { value: 'abjWilayah',   label: 'ABJ Wilayah',  unit: '%' },
+  { value: 'densityFigure',label: 'Density Figure (DF)', unit: '' },
+];
+
+const RegionalSummary = ({
+  data,
+  metric,
+  onMetricChange,
+}: {
+  data: any[];
+  metric: ChartMetric;
+  onMetricChange: (m: ChartMetric) => void;
+}) => {
   const chartData = data.map(d => ({
-    name: d.name.replace(/PKM /g, ''), // shorten names for the chart y-axis
+    name: d.name.replace(/PKM /g, ''),
     abj: d.abj,
+    // Store null flag separately — recharts can't render null bar values so we use 0
+    abjWilayah: d.abjWilayah ?? 0,
+    abjWilayahNull: d.abjWilayah === null || d.abjWilayah === undefined,
+    densityFigure: d.densityFigure ?? 0,
     totalSurveys: d.totalSurveys,
-    riskLevel: d.riskLevel
+    targetHouses: d.targetHouses ?? 0,
+    riskLevel: d.riskLevel,
   }));
 
-  // Increase height slightly if there are many data points to prevent squishing
-  const chartHeight = Math.max(280, data.length * 40 + 40);
+  const isDF = metric === 'densityFigure';
+  const currentOpt = METRIC_OPTIONS.find(o => o.value === metric)!;
+
+  // DF uses a 0–9 scale (WHO), ABJ uses 0–100
+  const yDomain: [number, number] = isDF ? [0, 9] : [0, 100];
+  const yTicks = isDF ? [0, 3, 6, 9] : [0, 25, 50, 75, 100];
+
+  // Reference line value for ABJ target (95) — not applicable for DF
+  const getBarColor = (entry: any) => {
+    // For abjWilayah: grey bar when no targetHouses data
+    if (metric === 'abjWilayah' && entry.abjWilayahNull) return '#CBD5E1';
+
+    if (isDF) {
+      const df = entry.densityFigure;
+      if (df >= 6) return '#ef4444'; // red
+      if (df >= 3) return '#eab308'; // yellow
+      return '#22c55e';              // green
+    }
+
+    // For ABJ metrics: color based on the ACTUAL displayed value
+    const value: number = entry[metric] ?? 0;
+    if (value >= 95) return '#22c55e'; // green  ≥95%
+    if (value >= 80) return '#eab308'; // yellow 80–94%
+    return '#ef4444';                  // red    <80%
+  };
+
+  const chartHeight = 300;
 
   return (
     <div className="bg-surface rounded-lg border border-border-subtle shadow-card p-5">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
         <h3 className="text-text-main font-bold text-sm uppercase tracking-wide flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-[18px]">bar_chart</span>
-          Performa per Wilayah (ABJ)
+          Performa per Wilayah
         </h3>
-        <a href="/peta-risiko" className="text-xs text-primary font-semibold hover:underline">Lihat Peta →</a>
+        {/* Metric Picker */}
+        <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+          {METRIC_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => onMetricChange(opt.value)}
+              className={`text-[11px] font-semibold px-3 py-1 rounded-md transition-all duration-150 ${
+                metric === opt.value
+                  ? 'bg-white text-primary shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
-      
+
       <div className="w-full mt-2" style={{ height: `${chartHeight}px` }}>
         {data.length === 0 ? (
           <div className="w-full h-full flex flex-col items-center justify-center text-sm text-text-muted">
@@ -145,71 +248,112 @@ const RegionalSummary = ({ data }: { data: any[] }) => {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={chartData}
-              layout="vertical"
-              margin={{ top: 10, right: 20, left: 10, bottom: 0 }}
-            >
+            <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 40 }}>
               <defs>
-                <linearGradient id="colorCritical" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#fca5a5" stopOpacity={1}/>
-                  <stop offset="100%" stopColor="#ef4444" stopOpacity={1}/>
+                <linearGradient id="colorCritical" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ef4444" stopOpacity={1}/>
+                  <stop offset="100%" stopColor="#fca5a5" stopOpacity={1}/>
                 </linearGradient>
-                <linearGradient id="colorWarning" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#fde047" stopOpacity={1}/>
-                  <stop offset="100%" stopColor="#eab308" stopOpacity={1}/>
+                <linearGradient id="colorWarning" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#eab308" stopOpacity={1}/>
+                  <stop offset="100%" stopColor="#fde047" stopOpacity={1}/>
                 </linearGradient>
-                <linearGradient id="colorSafe" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#86efac" stopOpacity={1}/>
-                  <stop offset="100%" stopColor="#22c55e" stopOpacity={1}/>
+                <linearGradient id="colorSafe" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22c55e" stopOpacity={1}/>
+                  <stop offset="100%" stopColor="#86efac" stopOpacity={1}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E2E8F0" />
-              <XAxis 
-                type="number"
-                domain={[0, 100]}
-                ticks={[0, 25, 50, 75, 100]}
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 11, fill: '#64748B' }}
-              />
-              <YAxis 
-                dataKey="name" 
-                type="category"
+              <XAxis
+                dataKey="name"
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 11, fill: '#64748B', fontWeight: 600 }}
-                width={80}
+                interval={0}
+                angle={-30}
+                textAnchor="end"
+                height={60}
               />
-              <Tooltip 
+              <YAxis
+                type="number"
+                domain={yDomain}
+                ticks={yTicks}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 11, fill: '#64748B' }}
+                width={36}
+                tickFormatter={(v) => isDF ? String(v) : `${v}%`}
+              />
+              <Tooltip
                 cursor={{ fill: '#F1F5F9' }}
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
-                    const data = payload[0].payload;
-                    const color = data.riskLevel === 'CRITICAL' ? '#ef4444' : data.riskLevel === 'WARNING' ? '#eab308' : '#22c55e';
+                    const d = payload[0].payload;
+                    const color = d.riskLevel === 'CRITICAL' ? '#ef4444' : d.riskLevel === 'WARNING' ? '#eab308' : '#22c55e';
+                    const isWilayah = metric === 'abjWilayah';
+                    const wilayahNull = isWilayah && d.abjWilayahNull;
                     return (
-                      <div className="bg-white p-3 border border-slate-200 shadow-lg rounded-lg">
-                        <p className="font-bold text-sm text-slate-800 mb-1">{data.name}</p>
-                        <p className="text-xs text-slate-600">ABJ: <span className="font-bold whitespace-nowrap" style={{ color }}>{data.abj}%</span></p>
-                        <p className="text-xs text-slate-600">Total Survei: <span className="font-bold">{data.totalSurveys}</span></p>
+                      <div className="bg-white p-3 border border-slate-200 shadow-lg rounded-lg min-w-[170px]">
+                        <p className="font-bold text-sm text-slate-800 mb-2">{d.name}</p>
+                        <p className="text-xs text-slate-600">
+                          {currentOpt.label}:{' '}
+                          {wilayahNull ? (
+                            <span className="font-bold text-slate-400">N/A</span>
+                          ) : (
+                            <span className="font-bold" style={{ color }}>
+                              {isDF ? d.densityFigure : `${payload[0].value}%`}
+                            </span>
+                          )}
+                        </p>
+                        {isWilayah && d.targetHouses > 0 && (
+                          <p className="text-[10px] text-slate-400 mt-0.5">
+                            Rumah terdaftar: <span className="font-semibold">{d.targetHouses}</span>
+                          </p>
+                        )}
+                        {isWilayah && wilayahNull && (
+                          <p className="text-[10px] text-slate-400 mt-0.5">Data rumah wilayah belum tersedia</p>
+                        )}
+                        {isDF && (
+                          <p className="text-[10px] text-slate-400 mt-1">
+                            {d.densityFigure >= 6 ? '🔴 Kepadatan Tinggi' : d.densityFigure >= 3 ? '🟡 Kepadatan Sedang' : '🟢 Kepadatan Rendah'}
+                          </p>
+                        )}
+                        {!isDF && !isWilayah && (
+                          <p className="text-[10px] text-slate-400 mt-1">
+                            {d.riskLevel === 'CRITICAL' ? '🔴 Kritis' : d.riskLevel === 'WARNING' ? '🟡 Waspada' : '🟢 Aman (≥95%)'}
+                          </p>
+                        )}
+                        <p className="text-xs text-slate-500 mt-1">Survei dilakukan: <span className="font-bold">{d.totalSurveys}</span></p>
                       </div>
                     );
                   }
                   return null;
                 }}
               />
-              <Bar 
-                dataKey="abj" 
-                radius={[0, 4, 4, 0]}
-                maxBarSize={28}
-              >
-                {chartData.map((entry, index) => {
-                  const gradientId = entry.riskLevel === 'CRITICAL' ? 'url(#colorCritical)' : entry.riskLevel === 'WARNING' ? 'url(#colorWarning)' : 'url(#colorSafe)';
-                  return <Cell key={`cell-${index}`} fill={gradientId} />;
-                })}
+              <Bar dataKey={metric} radius={[4, 4, 0, 0]} maxBarSize={40} minPointSize={3}>
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={getBarColor(entry)} />
+                ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+        )}
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 mt-3 justify-center flex-wrap">
+        {isDF ? (
+          <>
+            <span className="flex items-center gap-1.5 text-[11px] text-slate-500"><span className="w-3 h-3 rounded-sm bg-green-400 inline-block"></span>Rendah (DF 1–2)</span>
+            <span className="flex items-center gap-1.5 text-[11px] text-slate-500"><span className="w-3 h-3 rounded-sm bg-yellow-400 inline-block"></span>Sedang (DF 3–5)</span>
+            <span className="flex items-center gap-1.5 text-[11px] text-slate-500"><span className="w-3 h-3 rounded-sm bg-red-400 inline-block"></span>Kritis (DF 6–9)</span>
+          </>
+        ) : (
+          <>
+            <span className="flex items-center gap-1.5 text-[11px] text-slate-500"><span className="w-3 h-3 rounded-sm bg-green-400 inline-block"></span>Aman (≥95%)</span>
+            <span className="flex items-center gap-1.5 text-[11px] text-slate-500"><span className="w-3 h-3 rounded-sm bg-yellow-400 inline-block"></span>Waspada (80–94%)</span>
+            <span className="flex items-center gap-1.5 text-[11px] text-slate-500"><span className="w-3 h-3 rounded-sm bg-red-400 inline-block"></span>Kritis (&lt;80%)</span>
+          </>
         )}
       </div>
     </div>

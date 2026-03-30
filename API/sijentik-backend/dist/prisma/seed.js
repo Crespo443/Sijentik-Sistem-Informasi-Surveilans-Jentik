@@ -2,14 +2,34 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
-const puskesmasNames = [
-    'PKM Beru', 'PKM Kopeta', 'PKM Wolomarang', 'PKM Magepanda', 'PKM Palue',
-    'PKM Tuanggeo', 'PKM Teluk Maumere', 'PKM Koja Gete', 'PKM Boganatar',
-    'PKM Watubaing', 'PKM Tanarawa', 'PKM Waigete', 'PKM Mapitara',
-    'PKM Habibola', 'PKM Wualadu', 'PKM Bola', 'PKM Hewokloang',
-    'PKM Kewapante', 'PKM Waipare', 'PKM Nelle', 'PKM Koting',
-    'PKM Nita', 'PKM Nanga', 'PKM Lekebai', 'PKM Paga',
-    'PKM Wolofeo', 'PKM Feondari'
+const puskesmasData = [
+    { name: 'PKM Kopeta', kecamatan: 'Alok' },
+    { name: 'PKM Teluk', kecamatan: 'Alok' },
+    { name: 'PKM Wolomarang', kecamatan: 'Alok Barat' },
+    { name: 'PKM Beru', kecamatan: 'Alok Timur' },
+    { name: 'PKM Koja Gete', kecamatan: 'Alok Timur' },
+    { name: 'PKM Mapitara', kecamatan: 'Mapitara' },
+    { name: 'PKM Bola', kecamatan: 'Bola' },
+    { name: 'PKM Habibola', kecamatan: 'Doreng' },
+    { name: 'PKM Wualadu', kecamatan: 'Doreng' },
+    { name: 'PKM Hewokloang', kecamatan: 'Hewokloang' },
+    { name: 'PKM Waipare', kecamatan: 'Kangae' },
+    { name: 'PKM Kewapante', kecamatan: 'Kewapante' },
+    { name: 'PKM Koting', kecamatan: 'Koting' },
+    { name: 'PKM Nanga', kecamatan: 'Lela' },
+    { name: 'PKM Nita', kecamatan: 'Nita' },
+    { name: 'PKM Magepanda', kecamatan: 'Magepanda' },
+    { name: 'PKM Nelle', kecamatan: 'Nelle' },
+    { name: 'PKM Lekebai', kecamatan: 'Mego' },
+    { name: 'PKM Feondari', kecamatan: 'Mego' },
+    { name: 'PKM Paga', kecamatan: 'Paga' },
+    { name: 'PKM Wolofeo', kecamatan: 'Tanawawo' },
+    { name: 'PKM Palue', kecamatan: 'Palue' },
+    { name: 'PKM Tuanggeo', kecamatan: 'Palue' },
+    { name: 'PKM Waigete', kecamatan: 'Waigete' },
+    { name: 'PKM Watubaing', kecamatan: 'Talibura' },
+    { name: 'PKM Boganatar', kecamatan: 'Talibura' },
+    { name: 'PKM Tanarawa', kecamatan: 'Waiblama' },
 ];
 const kecamatanData = [
     {
@@ -377,7 +397,7 @@ async function main() {
     await prisma.accessCode.create({
         data: { code: 'ADMIN123', type: 'ADMIN' },
     });
-    const districtIds = [];
+    const districtMap = {};
     for (const kec of kecamatanData) {
         console.log(`  → Kecamatan ${kec.name}`);
         const district = await prisma.district.create({
@@ -389,7 +409,7 @@ async function main() {
                 areaSize: kec.areaSize,
             },
         });
-        districtIds.push(district.id);
+        districtMap[kec.name] = district.id;
         await prisma.village.createMany({
             data: kec.villages.map((v) => ({
                 name: v.name,
@@ -398,18 +418,20 @@ async function main() {
             })),
         });
     }
-    console.log(`🌱 Seeding ${puskesmasNames.length} Puskesmas secara acak...`);
-    for (const name of puskesmasNames) {
-        const randomDistrictId = districtIds[Math.floor(Math.random() * districtIds.length)];
-        const shortName = name.replace('PKM ', '').toUpperCase().substring(0, 5);
+    console.log(`🌱 Seeding ${puskesmasData.length} Puskesmas...`);
+    for (const pkm of puskesmasData) {
+        const districtId = districtMap[pkm.kecamatan];
+        if (!districtId)
+            continue;
+        const shortName = pkm.name.replace('PKM ', '').toUpperCase().substring(0, 5);
         const randomCode = `PKM${shortName}${Math.floor(1000 + Math.random() * 9000)}`;
         const healthCenter = await prisma.healthCenter.create({
             data: {
-                districtId: randomDistrictId,
-                name: name,
-                headName: `dr. ${name.replace('PKM ', '')} Specialist`,
+                districtId: districtId,
+                name: pkm.name,
+                headName: `dr. ${pkm.name.replace('PKM ', '')} Specialist`,
                 phoneNumber: `08${Math.floor(1000000000 + Math.random() * 9000000000)}`,
-                address: `Jl. Kesehatan No.${Math.floor(1 + Math.random() * 100)}, ${name.replace('PKM ', '')}`,
+                address: `Jl. Kesehatan No.${Math.floor(1 + Math.random() * 100)}, ${pkm.name.replace('PKM ', '')}`,
                 targetHouses: Math.floor(200 + Math.random() * 600),
             },
         });
@@ -421,7 +443,7 @@ async function main() {
             },
         });
         const districtVillages = await prisma.village.findMany({
-            where: { districtId: randomDistrictId },
+            where: { districtId: districtId },
             select: { id: true },
         });
         for (let i = 0; i < 20; i++) {
@@ -473,7 +495,7 @@ async function main() {
             });
         }
     }
-    console.log(`✅ Seeding finished! ${kecamatanData.length} kecamatan + ${puskesmasNames.length} puskesmas + ${puskesmasNames.length * 20} surveys created.`);
+    console.log(`✅ Seeding finished! ${kecamatanData.length} kecamatan + ${puskesmasData.length} puskesmas + ${puskesmasData.length * 20} surveys created.`);
 }
 main()
     .catch((e) => {

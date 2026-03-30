@@ -8,19 +8,26 @@ export declare class AnalyticsService {
     getDashboardKPIs(user: any, startDate?: string, endDate?: string): Promise<{
         totalSurveys: number;
         abjSurvei: number;
-        abjWilayah: number;
+        abjWilayah: number | null;
         houseIndex: number;
         containerIndex: number;
         breteauIndex: number;
         positiveHouses: number;
         jumlahPuskesmas: number;
+        totalTargetHouses: number;
         densityFigure: number;
         mayaIndex: string;
     }>;
     getRegionalPerformance(user: any): Promise<{
         name: string;
-        abj: number;
         totalSurveys: number;
+        targetHouses: number;
+        abj: number;
+        abjWilayah: number | null;
+        houseIndex: number;
+        containerIndex: number;
+        breteauIndex: number;
+        densityFigure: number;
         riskLevel: string;
     }[]>;
     private calculateRegionStats;
