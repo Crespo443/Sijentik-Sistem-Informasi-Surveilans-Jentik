@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model District {
+  id           String         @id @default(uuid()) @db.Uuid
+  name         String         @unique
+  headName     String?        @map("head_name")
+  phoneNumber  String?        @map("phone_number")
+  address      String?
+  areaSize     Decimal?       @map("area_size") @db.Decimal
+  healthCenters HealthCenter[]
+  villages     Village[]
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("districts")
+  @@index([name])
+}
+
+model HealthCenter {
+  id           String       @id @default(uuid()) @db.Uuid
+  districtId   String       @map("district_id") @db.Uuid
+  district     District     @relation(fields: [districtId], references: [id])
+  name         String
+  headName     String?      @map("head_name")
+  phoneNumber  String?      @map("phone_number")
+  address      String?
+  targetHouses Int          @default(0) @map("target_houses")
+  accessCodes  AccessCode[]
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("health_centers")
+  @@index([districtId])
+  @@index([name])
+}
+
+model Village {
+  id         String      @id @default(uuid()) @db.Uuid
+  districtId String      @map("district_id") @db.Uuid
+  district   District    @relation(fields: [districtId], references: [id])
+  name       String
+  type       VillageType @default(DESA)
+  surveys    Survey[]
+
+  @@map("villages")
+  @@index([districtId])
+}
+
+enum VillageType {
+  DESA
+  KELURAHAN
+}
+
+model AccessCode {
+  id             String        @id @default(uuid()) @db.Uuid
+  code           String        @unique
+  type           AccessCodeType
+  healthCenterId String?       @map("health_center_id") @db.Uuid
+  healthCenter   HealthCenter? @relation(fields: [healthCenterId], references: [id])
+  isActive       Boolean       @default(true) @map("is_active")
+  surveys        Survey[]
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("access_codes")
+  @@index([code])
+}
+
+enum AccessCodeType {
+  ADMIN
+  PKM_UNIT
+}
+
+model Survey {
+  id            String            @id @default(uuid()) @db.Uuid
+  surveyorName  String            @map("surveyor_name")
+  accessCodeId  String            @map("access_code_id") @db.Uuid
+  accessCode    AccessCode        @relation(fields: [accessCodeId], references: [id])
+  villageId     String            @map("village_id") @db.Uuid
+  village       Village           @relation(fields: [villageId], references: [id])
+  surveyDate    DateTime          @map("survey_date") @db.Date
+  houseOwner    String            @map("house_owner")
+  rtRw          String?           @map("rt_rw")
+  address       String?
+  occupantCount Int?              @map("occupant_count")
+  latitude      Decimal?          @db.Decimal
+  longitude     Decimal?          @db.Decimal
+  status        SurveyStatus      @default(DRAFT)
+  notes         String?
+  containers    SurveyContainer[]
+  interventions SurveyIntervention[]
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("surveys")
+  @@index([villageId])
+  @@index([surveyDate])
+  @@index([surveyorName])
+  @@index([houseOwner])
+}
+
+enum SurveyStatus {
+  DRAFT
+  SUBMITTED
+}
+
+model SurveyContainer {
+  id             String            @id @default(uuid()) @db.Uuid
+  surveyId       String            @map("survey_id") @db.Uuid
+  survey         Survey            @relation(fields: [surveyId], references: [id])
+  category       ContainerCategory
+  containerName  String            @map("container_name")
+  inspectedCount Int               @default(0) @map("inspected_count")
+  positiveCount  Int               @default(0) @map("positive_count")
+
+  @@map("survey_containers")
+  @@index([surveyId])
+}
+
+enum ContainerCategory {
+  DAILY
+  NON_DAILY
+  NATURAL
+}
+
+model SurveyIntervention {
+  id           String  @id @default(uuid()) @db.Uuid
+  surveyId     String  @map("survey_id") @db.Uuid
+  survey  Survey  @relation(fields: [surveyId], references: [id])
+  activityName String  @map("activity_name")
+  isDone       Boolean @default(false) @map("is_done")
+
+  @@map("survey_interventions")
+  @@index([surveyId])
+}
