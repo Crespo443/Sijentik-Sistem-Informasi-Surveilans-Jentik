@@ -21,4 +21,18 @@ api.interceptors.request.use(
   }
 );
 
+// Add a response interceptor to handle 401 Unauthorized (expired/invalid token)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear stale auth data and redirect to login
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;
