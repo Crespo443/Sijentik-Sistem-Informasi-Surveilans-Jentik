@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export class AnalyticsService {
   constructor(private prisma: PrismaService) {}
 
-  private getWhereClause(user: any, startDate?: string, endDate?: string) {
+  private getWhereClause(user: any, startDate?: string, endDate?: string, districtId?: string) {
     const where: any = {};
     if (user.role === 'HEALTHCARE_MANAGER' || user.role === 'SURVEYOR') {
       // Filter surveys by the PKM's access code scope
@@ -13,6 +13,9 @@ export class AnalyticsService {
     }
     if (startDate && endDate) {
       where.surveyDate = { gte: new Date(startDate), lte: new Date(endDate) };
+    }
+    if (districtId) {
+      where.village = { districtId };
     }
     return where;
   }
@@ -37,17 +40,20 @@ export class AnalyticsService {
     return 'High';
   }
 
-  async getDashboardKPIs(user: any, startDate?: string, endDate?: string) {
-    const whereClause = this.getWhereClause(user, startDate, endDate);
+  async getDashboardKPIs(user: any, startDate?: string, endDate?: string, districtId?: string) {
+    const whereClause = this.getWhereClause(user, startDate, endDate, districtId);
 
     // Get total puskesmas count & total registered houses based on scope
     let jumlahPuskesmas = 1;
     let totalTargetHouses = 0;
 
     if (user.role === 'ADMIN') {
-      jumlahPuskesmas = await this.prisma.healthCenter.count();
+      jumlahPuskesmas = await this.prisma.healthCenter.count({
+        where: districtId ? { districtId } : undefined
+      });
       // Sum targetHouses from ALL health centers for kabupaten-level ABJ Wilayah
       const allPkm = await this.prisma.healthCenter.findMany({
+        where: districtId ? { districtId } : undefined,
         select: { targetHouses: true },
       });
       totalTargetHouses = allPkm.reduce((sum, p) => sum + (p.targetHouses ?? 0), 0);
@@ -129,26 +135,37 @@ export class AnalyticsService {
     };
   }
 
-  async getRegionalPerformance(user: any) {
+  async getRegionalPerformance(user: any, startDate?: string, endDate?: string, districtId?: string) {
     if (user.role === 'ADMIN') {
       // Show stats grouped by health center (PKM)
       // Include targetHouses so ABJ Wilayah can use real registered house count
       const healthCenters = await this.prisma.healthCenter.findMany({
+        where: districtId ? { districtId } : undefined,
         include: {
+          district: true,
           accessCodes: {
-            include: { surveys: { include: { containers: true } } },
+            include: { 
+              surveys: {
+                where: startDate && endDate ? { surveyDate: { gte: new Date(startDate), lte: new Date(endDate) } } : undefined,
+                include: { containers: true } 
+              } 
+            },
           },
         },
       });
       return healthCenters.map((pkm) => {
         const surveys = pkm.accessCodes.flatMap((ac) => ac.surveys);
-        return this.calculateRegionStats(pkm.name, surveys, pkm.targetHouses);
+        return this.calculateRegionStats(pkm.name, surveys, pkm.targetHouses, pkm.district?.name);
       });
     } else {
       // Show stats grouped by village for this PKM's surveys
       // Villages don't have their own house count, so ABJ Wilayah = null at village level
       const surveys = await this.prisma.survey.findMany({
-        where: { accessCode: { healthCenterId: user.healthCenterId } },
+        where: { 
+          accessCode: { healthCenterId: user.healthCenterId },
+          ...(startDate && endDate ? { surveyDate: { gte: new Date(startDate), lte: new Date(endDate) } } : {}),
+          ...(districtId ? { village: { districtId } } : {})
+        },
         include: { containers: true, village: true },
       });
       const grouped = surveys.reduce<Record<string, any[]>>((acc, s) => {
@@ -158,7 +175,7 @@ export class AnalyticsService {
         return acc;
       }, {});
       return Object.entries(grouped).map(([name, surveysInVillage]) =>
-        this.calculateRegionStats(name, surveysInVillage, undefined),
+        this.calculateRegionStats(name, surveysInVillage, undefined, undefined),
       );
     }
   }
@@ -167,11 +184,14 @@ export class AnalyticsService {
     name: string,
     surveys: any[],
     targetHouses?: number,
+    districtName?: string,
   ) {
     if (surveys.length === 0) {
       return {
         name,
+        districtName,
         totalSurveys: 0,
+        positiveHouses: 0,
         targetHouses: targetHouses ?? 0,
         abj: 0,
         abjWilayah: targetHouses && targetHouses > 0 ? 100 : null,
@@ -221,8 +241,10 @@ export class AnalyticsService {
 
     return {
       name,
+      districtName,
       totalSurveys,
       targetHouses: targetHouses ?? 0,
+      positiveHouses,
       abj: parseFloat(abjSurvei.toFixed(2)),
       abjWilayah: abjWilayah !== null ? parseFloat(abjWilayah.toFixed(2)) : null,
       houseIndex: parseFloat(hi.toFixed(2)),
@@ -231,6 +253,38 @@ export class AnalyticsService {
       densityFigure,
       riskLevel,
     };
+  }
+
+  async getAbjTrend(user: any, year: string, districtId?: string) {
+    const startDate = `${year}-01-01`;
+    const endDate = `${year}-12-31`;
+    const whereClause = this.getWhereClause(user, startDate, endDate, districtId);
+
+    const surveys = await this.prisma.survey.findMany({
+      where: whereClause,
+      include: { containers: true },
+    });
+
+    const monthlyData = Array.from({ length: 12 }, (_, i) => ({
+      month: i + 1,
+      totalSurveys: 0,
+      positiveHouses: 0,
+      abjSurvei: null as number | null,
+    }));
+
+    surveys.forEach((survey) => {
+      const month = survey.surveyDate.getMonth();
+      const isPositive = survey.containers.some((c) => c.positiveCount > 0);
+      
+      monthlyData[month].totalSurveys++;
+      if (isPositive) monthlyData[month].positiveHouses++;
+    });
+
+    return monthlyData.map(data => {
+      if (data.totalSurveys === 0) return data;
+      const abjSurvei = ((data.totalSurveys - data.positiveHouses) / data.totalSurveys) * 100;
+      return { ...data, abjSurvei: parseFloat(abjSurvei.toFixed(2)) };
+    });
   }
 
   async getRecentActivity(user: any) {

@@ -17,13 +17,16 @@ let AnalyticsService = class AnalyticsService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    getWhereClause(user, startDate, endDate) {
+    getWhereClause(user, startDate, endDate, districtId) {
         const where = {};
         if (user.role === 'HEALTHCARE_MANAGER' || user.role === 'SURVEYOR') {
             where.accessCode = { healthCenterId: user.healthCenterId };
         }
         if (startDate && endDate) {
             where.surveyDate = { gte: new Date(startDate), lte: new Date(endDate) };
+        }
+        if (districtId) {
+            where.village = { districtId };
         }
         return where;
     }
@@ -55,13 +58,16 @@ let AnalyticsService = class AnalyticsService {
             return 'Medium';
         return 'High';
     }
-    async getDashboardKPIs(user, startDate, endDate) {
-        const whereClause = this.getWhereClause(user, startDate, endDate);
+    async getDashboardKPIs(user, startDate, endDate, districtId) {
+        const whereClause = this.getWhereClause(user, startDate, endDate, districtId);
         let jumlahPuskesmas = 1;
         let totalTargetHouses = 0;
         if (user.role === 'ADMIN') {
-            jumlahPuskesmas = await this.prisma.healthCenter.count();
+            jumlahPuskesmas = await this.prisma.healthCenter.count({
+                where: districtId ? { districtId } : undefined
+            });
             const allPkm = await this.prisma.healthCenter.findMany({
+                where: districtId ? { districtId } : undefined,
                 select: { targetHouses: true },
             });
             totalTargetHouses = allPkm.reduce((sum, p) => sum + (p.targetHouses ?? 0), 0);
@@ -130,23 +136,34 @@ let AnalyticsService = class AnalyticsService {
             mayaIndex,
         };
     }
-    async getRegionalPerformance(user) {
+    async getRegionalPerformance(user, startDate, endDate, districtId) {
         if (user.role === 'ADMIN') {
             const healthCenters = await this.prisma.healthCenter.findMany({
+                where: districtId ? { districtId } : undefined,
                 include: {
+                    district: true,
                     accessCodes: {
-                        include: { surveys: { include: { containers: true } } },
+                        include: {
+                            surveys: {
+                                where: startDate && endDate ? { surveyDate: { gte: new Date(startDate), lte: new Date(endDate) } } : undefined,
+                                include: { containers: true }
+                            }
+                        },
                     },
                 },
             });
             return healthCenters.map((pkm) => {
                 const surveys = pkm.accessCodes.flatMap((ac) => ac.surveys);
-                return this.calculateRegionStats(pkm.name, surveys, pkm.targetHouses);
+                return this.calculateRegionStats(pkm.name, surveys, pkm.targetHouses, pkm.district?.name);
             });
         }
         else {
             const surveys = await this.prisma.survey.findMany({
-                where: { accessCode: { healthCenterId: user.healthCenterId } },
+                where: {
+                    accessCode: { healthCenterId: user.healthCenterId },
+                    ...(startDate && endDate ? { surveyDate: { gte: new Date(startDate), lte: new Date(endDate) } } : {}),
+                    ...(districtId ? { village: { districtId } } : {})
+                },
                 include: { containers: true, village: true },
             });
             const grouped = surveys.reduce((acc, s) => {
@@ -156,14 +173,16 @@ let AnalyticsService = class AnalyticsService {
                 acc[key].push(s);
                 return acc;
             }, {});
-            return Object.entries(grouped).map(([name, surveysInVillage]) => this.calculateRegionStats(name, surveysInVillage, undefined));
+            return Object.entries(grouped).map(([name, surveysInVillage]) => this.calculateRegionStats(name, surveysInVillage, undefined, undefined));
         }
     }
-    calculateRegionStats(name, surveys, targetHouses) {
+    calculateRegionStats(name, surveys, targetHouses, districtName) {
         if (surveys.length === 0) {
             return {
                 name,
+                districtName,
                 totalSurveys: 0,
+                positiveHouses: 0,
                 targetHouses: targetHouses ?? 0,
                 abj: 0,
                 abjWilayah: targetHouses && targetHouses > 0 ? 100 : null,
@@ -201,8 +220,10 @@ let AnalyticsService = class AnalyticsService {
             riskLevel = 'WARNING';
         return {
             name,
+            districtName,
             totalSurveys,
             targetHouses: targetHouses ?? 0,
+            positiveHouses,
             abj: parseFloat(abjSurvei.toFixed(2)),
             abjWilayah: abjWilayah !== null ? parseFloat(abjWilayah.toFixed(2)) : null,
             houseIndex: parseFloat(hi.toFixed(2)),
@@ -211,6 +232,34 @@ let AnalyticsService = class AnalyticsService {
             densityFigure,
             riskLevel,
         };
+    }
+    async getAbjTrend(user, year, districtId) {
+        const startDate = `${year}-01-01`;
+        const endDate = `${year}-12-31`;
+        const whereClause = this.getWhereClause(user, startDate, endDate, districtId);
+        const surveys = await this.prisma.survey.findMany({
+            where: whereClause,
+            include: { containers: true },
+        });
+        const monthlyData = Array.from({ length: 12 }, (_, i) => ({
+            month: i + 1,
+            totalSurveys: 0,
+            positiveHouses: 0,
+            abjSurvei: null,
+        }));
+        surveys.forEach((survey) => {
+            const month = survey.surveyDate.getMonth();
+            const isPositive = survey.containers.some((c) => c.positiveCount > 0);
+            monthlyData[month].totalSurveys++;
+            if (isPositive)
+                monthlyData[month].positiveHouses++;
+        });
+        return monthlyData.map(data => {
+            if (data.totalSurveys === 0)
+                return data;
+            const abjSurvei = ((data.totalSurveys - data.positiveHouses) / data.totalSurveys) * 100;
+            return { ...data, abjSurvei: parseFloat(abjSurvei.toFixed(2)) };
+        });
     }
     async getRecentActivity(user) {
         const whereClause = this.getWhereClause(user);

@@ -1,0 +1,648 @@
+﻿<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Laporan - Sistem Surveilans Jentik</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Material Symbols -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#6504ae",
+              "primary-dark": "#4a0380",
+              "primary-light": "#f3e8ff",
+              "background-light": "#F4F6F8",
+              "sidebar-bg": "#0F172A",
+              surface: "#FFFFFF",
+              "border-subtle": "#E2E8F0",
+              "text-main": "#1A202C",
+              "text-muted": "#64748B",
+              danger: "#DC2626",
+              success: "#16A34A",
+              warning: "#D97706",
+            },
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+              heading: ["IBM Plex Sans", "sans-serif"],
+              mono: ["JetBrains Mono", "monospace"],
+            },
+            borderRadius: {
+              DEFAULT: "2px",
+              sm: "2px",
+              md: "4px",
+              lg: "6px",
+              xl: "8px",
+              full: "9999px",
+            },
+            boxShadow: {
+              card: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+              "card-hover": "0 4px 12px 0 rgb(0 0 0 / 0.08)",
+            },
+            animation: {
+              "fade-in": "fadeIn 0.4s ease-out",
+              "slide-up": "slideUp 0.4s ease-out",
+            },
+            keyframes: {
+              fadeIn: { "0%": { opacity: "0" }, "100%": { opacity: "1" } },
+              slideUp: { "0%": { opacity: "0", transform: "translateY(8px)" }, "100%": { opacity: "1", transform: "translateY(0)" } },
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body { font-family: "Inter", sans-serif; }
+      h1, h2, h3, h4, h5, h6 { font-family: "IBM Plex Sans", sans-serif; }
+      .data-mono { font-family: "JetBrains Mono", monospace; }
+      .custom-scroll::-webkit-scrollbar { width: 6px; }
+      .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+      .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+      .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+      .accent-bar { height: 3px; background: linear-gradient(90deg, #6504ae 0%, #a855f7 50%, #c084fc 100%); border-radius: 0 0 2px 2px; }
+      .kpi-card { transition: all 0.2s ease; }
+      .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px 0 rgb(0 0 0 / 0.08); }
+      .progress-fill { transition: width 1s ease-out; }
+      .bar-chart-bar { transition: height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
+      .table-row-hover:hover { background: linear-gradient(90deg, rgba(101, 4, 174, 0.03) 0%, transparent 100%); }
+    </style>
+  </head>
+  <body class="bg-background-light text-text-main antialiased overflow-hidden h-screen flex">
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="w-64 bg-sidebar-bg flex flex-col h-full border-r border-slate-800 flex-shrink-0 z-20">
+      <!-- Brand -->
+      <div class="h-16 flex items-center px-6 border-b border-slate-800 bg-sidebar-bg">
+        <div class="flex items-center gap-3">
+          <img src="../assets/Logo.png" alt="Logo" class="w-8 h-8 object-contain" />
+          <div>
+            <h1 class="text-white text-sm font-bold tracking-wide uppercase leading-tight">DINKES SIKKA</h1>
+            <p class="text-slate-400 text-xs font-medium">Surveilans</p>
+          </div>
+        </div>
+      </div>
+      <!-- Navigation -->
+      <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded text-slate-300 hover:bg-white/5 hover:text-white transition-colors group" href="dashboard.html">
+          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-white">dashboard</span>
+          <span class="text-sm font-medium">Dashboard</span>
+        </a>
+
+        <!-- Data Master -->
+        <div>
+          <button onclick="document.getElementById('masterSubmenu').classList.toggle('hidden')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded text-slate-300 hover:bg-white/5 hover:text-white transition-colors group">
+            <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-white">database</span>
+            <span class="text-sm font-medium flex-1 text-left">Data Master</span>
+            <span class="material-symbols-outlined text-[16px] text-slate-400 group-hover:text-white">expand_more</span>
+          </button>
+          <div id="masterSubmenu" class="hidden ml-8 mt-1 space-y-0.5">
+            <a class="flex items-center gap-2 px-3 py-2 rounded text-slate-400 hover:bg-white/5 hover:text-white transition-colors text-sm" href="master.kecamatan.html">
+              <span class="material-symbols-outlined text-[16px]">location_city</span>Data Kecamatan
+            </a>
+            <a class="flex items-center gap-2 px-3 py-2 rounded text-slate-400 hover:bg-white/5 hover:text-white transition-colors text-sm" href="master.puskesmas.html">
+              <span class="material-symbols-outlined text-[16px]">local_hospital</span>Data Puskesmas
+            </a>
+          </div>
+        </div>
+
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded text-slate-300 hover:bg-white/5 hover:text-white transition-colors group" href="master.survey.html">
+          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-white">edit_document</span>
+          <span class="text-sm font-medium">Survey Input</span>
+        </a>
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded text-slate-300 hover:bg-white/5 hover:text-white transition-colors group" href="peta.risiko.html">
+          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-white">map</span>
+          <span class="text-sm font-medium">Peta Risiko</span>
+        </a>
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded text-slate-300 hover:bg-white/5 hover:text-white transition-colors group" href="datasurvey.html">
+          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-white">fact_check</span>
+          <span class="text-sm font-medium">Data Survey</span>
+        </a>
+
+        <!-- Laporan (active) -->
+        <div>
+          <button onclick="document.getElementById('laporanSubmenu').classList.toggle('hidden')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded bg-primary text-white group transition-colors">
+            <span class="material-symbols-outlined text-[20px]">summarize</span>
+            <span class="text-sm font-medium flex-1 text-left">Laporan</span>
+            <span class="material-symbols-outlined text-[16px]">expand_more</span>
+          </button>
+          <div id="laporanSubmenu" class="ml-8 mt-1 space-y-0.5">
+            <a class="flex items-center gap-2 px-3 py-2 rounded bg-white/10 text-white text-sm font-medium" href="laporan.html">
+              <span class="material-symbols-outlined text-[16px]">bar_chart</span>Rekap Periodik
+            </a>
+            <a class="flex items-center gap-2 px-3 py-2 rounded text-slate-400 hover:bg-white/5 hover:text-white transition-colors text-sm" href="laporan.puskesmas.html">
+              <span class="material-symbols-outlined text-[16px]">local_hospital</span>Per Puskesmas
+            </a>
+          </div>
+        </div>
+      </nav>
+      <!-- User Profile -->
+      <div class="p-4 border-t border-slate-800">
+        <div class="flex items-center gap-3">
+          <img alt="User Profile" class="w-9 h-9 rounded-full bg-slate-700 object-cover border border-slate-600"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9fD80kLv9imMKmYtFQyqRscgkFkpzHs5XPusjgWJXVoClJCr_2PDKuWPlBszUohKbrKTjJdhJn5yg379162zUGaSLQK8oAons3L_N8y2vRHgp1jzB5mAfBsjyb9vjiuJ0M5WTz0C3r3w3jM_-HvBOBr-YdD-9m3LcyNEE8KM0vjU1MRzTRKB5IvurEhLej8jUvysM0NbYGu4ljTlo1j5cgwrICoBVQO7Nc89fgjF5mDdNgfML_-p10wdhJyfD7NU4y2nNKs55IPc" />
+          <div class="flex-1 min-w-0">
+            <p class="text-white text-sm font-medium truncate">Dr. Suryo H.</p>
+            <p class="text-slate-400 text-xs truncate">Administrator</p>
+          </div>
+          <button class="text-slate-400 hover:text-white">
+            <span class="material-symbols-outlined text-[20px]">logout</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-background-light">
+
+      <!-- Header -->
+      <header class="h-16 bg-surface border-b border-border-subtle flex items-center justify-between px-6 sticky top-0 z-10 shrink-0">
+        <div class="flex items-center gap-4">
+          <h2 class="font-heading text-lg font-bold text-text-main tracking-tight">Laporan Surveilans</h2>
+          <div class="h-4 w-px bg-slate-200 mx-1"></div>
+          <nav class="flex items-center gap-1.5 text-sm text-text-muted">
+            <span class="text-text-main font-medium">Rekap Periodik</span>
+          </nav>
+        </div>
+        <div class="flex items-center gap-3">
+          <button class="flex items-center gap-2 bg-white border border-border-subtle text-text-muted px-4 py-1.5 rounded text-sm font-medium hover:bg-slate-50 hover:text-text-main transition-colors">
+            <span class="material-symbols-outlined text-[18px]">print</span>
+            Cetak
+          </button>
+          <button class="flex items-center gap-2 bg-white border border-border-subtle text-text-muted px-4 py-1.5 rounded text-sm font-medium hover:bg-slate-50 hover:text-text-main transition-colors">
+            <span class="material-symbols-outlined text-[18px]">table_view</span>
+            Export Excel
+          </button>
+          <button class="flex items-center gap-2 bg-primary text-white px-4 py-1.5 rounded text-sm font-medium hover:bg-primary-dark transition-colors shadow-sm">
+            <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+            Export PDF
+          </button>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="flex-1 overflow-y-auto p-6 custom-scroll">
+        <div class="max-w-[1400px] mx-auto space-y-5">
+
+          <!-- Filter Section -->
+          <div class="bg-surface border border-border-subtle shadow-card rounded-lg p-5 animate-fade-in">
+            <h3 class="text-sm font-bold font-heading text-text-main mb-4 flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px] text-primary">filter_alt</span>
+              Filter Periode Laporan
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+              <div>
+                <label class="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Jenis Periode</label>
+                <select id="tipePeriode" onchange="togglePeriode()" class="w-full px-3 py-2 text-sm border border-border-subtle rounded bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors">
+                  <option value="bulanan">Bulanan</option>
+                  <option value="mingguan">Mingguan</option>
+                  <option value="tahunan">Tahunan</option>
+                </select>
+              </div>
+              <div id="filterBulan">
+                <label class="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Bulan</label>
+                <select class="w-full px-3 py-2 text-sm border border-border-subtle rounded bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors">
+                  <option>Semua</option>
+                  <option selected>Maret</option>
+                  <option>Februari</option>
+                  <option>Januari</option>
+                  <option>Desember</option>
+                  <option>November</option>
+                  <option>Oktober</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Tahun</label>
+                <select class="w-full px-3 py-2 text-sm border border-border-subtle rounded bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors">
+                  <option selected>2026</option>
+                  <option>2025</option>
+                  <option>2024</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Kecamatan</label>
+                <select class="w-full px-3 py-2 text-sm border border-border-subtle rounded bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors">
+                  <option>Semua Kecamatan</option>
+                  <option>Kec. Alok</option>
+                  <option>Kec. Alok Barat</option>
+                  <option>Kec. Alok Timur</option>
+                  <option>Kec. Maumere</option>
+                </select>
+              </div>
+              <div>
+                <button class="w-full bg-primary text-white px-4 py-2 rounded text-sm font-semibold hover:bg-primary-dark transition-colors flex items-center justify-center gap-2">
+                  <span class="material-symbols-outlined text-[18px]">search</span>
+                  Tampilkan
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI Summary Cards -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
+            <!-- Total Rumah -->
+            <div class="kpi-card bg-surface rounded-lg border border-border-subtle shadow-card overflow-hidden">
+              <div class="accent-bar"></div>
+              <div class="p-5">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="text-text-muted text-xs font-semibold uppercase tracking-wider">Total Rumah</h3>
+                  <div class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-primary text-[20px]">home_work</span>
+                  </div>
+                </div>
+                <div class="text-3xl font-bold text-text-main font-heading tracking-tight data-mono">5,500</div>
+                <div class="mt-2 text-xs text-text-muted">Total rumah diperiksa bulan ini</div>
+                <div class="mt-3 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="progress-fill h-full bg-primary/50 rounded-full" style="width: 78%"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Rumah Positif -->
+            <div class="kpi-card bg-surface rounded-lg border border-border-subtle shadow-card overflow-hidden">
+              <div class="accent-bar" style="background: linear-gradient(90deg, #DC2626 0%, #f87171 100%)"></div>
+              <div class="p-5">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="text-text-muted text-xs font-semibold uppercase tracking-wider">Rumah Positif</h3>
+                  <div class="w-9 h-9 rounded-lg bg-danger/10 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-danger text-[20px]">bug_report</span>
+                  </div>
+                </div>
+                <div class="text-3xl font-bold text-danger font-heading tracking-tight data-mono">428</div>
+                <div class="flex items-center gap-1.5 mt-2">
+                  <span class="material-symbols-outlined text-danger text-[14px]">trending_down</span>
+                  <span class="text-xs text-danger font-medium">-3.2%</span>
+                  <span class="text-xs text-text-muted">dari bulan lalu</span>
+                </div>
+                <div class="mt-3 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="progress-fill h-full bg-danger/50 rounded-full" style="width: 7.8%"></div>
+                </div>
+              </div>
+            </div>
+            <!-- ABJ Survei -->
+            <div class="kpi-card bg-surface rounded-lg border border-border-subtle shadow-card overflow-hidden">
+              <div class="accent-bar" style="background: linear-gradient(90deg, #16A34A 0%, #4ade80 100%)"></div>
+              <div class="p-5">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="text-text-muted text-xs font-semibold uppercase tracking-wider">ABJ Survei</h3>
+                  <div class="w-9 h-9 rounded-lg bg-success/10 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-success text-[20px]">checklist</span>
+                  </div>
+                </div>
+                <div class="text-3xl font-bold text-success font-heading tracking-tight data-mono">92.2%</div>
+                <div class="flex items-center gap-1.5 mt-2">
+                  <span class="material-symbols-outlined text-success text-[14px]">trending_up</span>
+                  <span class="text-xs text-success font-medium">+1.1%</span>
+                  <span class="text-xs text-text-muted">dari bulan lalu</span>
+                </div>
+                <div class="mt-3 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="progress-fill h-full bg-success/50 rounded-full" style="width: 92.2%"></div>
+                </div>
+              </div>
+            </div>
+            <!-- ABJ Wilayah -->
+            <div class="kpi-card bg-surface rounded-lg border border-border-subtle shadow-card overflow-hidden">
+              <div class="accent-bar" style="background: linear-gradient(90deg, #D97706 0%, #fbbf24 100%)"></div>
+              <div class="p-5">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="text-text-muted text-xs font-semibold uppercase tracking-wider">ABJ Wilayah</h3>
+                  <div class="w-9 h-9 rounded-lg bg-warning/10 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-warning text-[20px]">map</span>
+                  </div>
+                </div>
+                <div class="text-3xl font-bold text-warning font-heading tracking-tight data-mono">89.7%</div>
+                <div class="flex items-center gap-1.5 mt-2">
+                  <span class="material-symbols-outlined text-text-muted text-[14px]">trending_flat</span>
+                  <span class="text-xs text-text-muted font-medium">-0.5%</span>
+                  <span class="text-xs text-text-muted">dari bulan lalu</span>
+                </div>
+                <div class="mt-3 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="progress-fill h-full bg-warning/50 rounded-full" style="width: 89.7%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trend Chart + Index Mini Cards -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <!-- Bar Chart Trend ABJ -->
+            <div class="lg:col-span-2 bg-surface rounded-lg border border-border-subtle shadow-card p-5">
+              <div class="flex items-center justify-between mb-5">
+                <h3 class="text-text-main font-bold text-sm uppercase tracking-wide flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary text-[18px]">bar_chart</span>
+                  Tren ABJ Survei per Bulan (2026)
+                </h3>
+                <div class="flex items-center gap-3 text-xs text-text-muted">
+                  <span class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-sm bg-primary/70"></span>ABJ Survei</span>
+                  <span class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-sm bg-success/50"></span>Target (95%)</span>
+                </div>
+              </div>
+              <!-- Simple bar chart -->
+              <div class="flex items-end gap-3 h-40 px-2">
+                <!-- Target line indicator -->
+                <div class="flex-1 relative flex items-end">
+                  <!-- Bars -->
+                  <div class="w-full flex items-end gap-2 h-full">
+                    <!-- Jan -->
+                    <div class="flex-1 flex flex-col items-center gap-1">
+                      <span class="text-[9px] font-mono text-text-muted font-bold">88.1</span>
+                      <div class="w-full bar-chart-bar bg-primary/70 rounded-t" style="height: 71%"></div>
+                    </div>
+                    <!-- Feb -->
+                    <div class="flex-1 flex flex-col items-center gap-1">
+                      <span class="text-[9px] font-mono text-text-muted font-bold">90.5</span>
+                      <div class="w-full bar-chart-bar bg-primary/70 rounded-t" style="height: 77%"></div>
+                    </div>
+                    <!-- Mar (active) -->
+                    <div class="flex-1 flex flex-col items-center gap-1">
+                      <span class="text-[9px] font-mono text-primary font-bold">92.2</span>
+                      <div class="w-full bar-chart-bar bg-primary rounded-t ring-2 ring-primary/30" style="height: 83%"></div>
+                    </div>
+                    <!-- Apr - empty/projected -->
+                    <div class="flex-1 flex flex-col items-center gap-1">
+                      <span class="text-[9px] font-mono text-slate-300 font-bold">—</span>
+                      <div class="w-full bar-chart-bar bg-slate-100 rounded-t border-2 border-dashed border-slate-200" style="height: 30%"></div>
+                    </div>
+                    <div class="flex-1 flex flex-col items-center gap-1">
+                      <span class="text-[9px] font-mono text-slate-300 font-bold">—</span>
+                      <div class="w-full bar-chart-bar bg-slate-100 rounded-t border-2 border-dashed border-slate-200" style="height: 30%"></div>
+                    </div>
+                    <div class="flex-1 flex flex-col items-center gap-1">
+                      <span class="text-[9px] font-mono text-slate-300 font-bold">—</span>
+                      <div class="w-full bar-chart-bar bg-slate-100 rounded-t border-2 border-dashed border-slate-200" style="height: 30%"></div>
+                    </div>
+                    <div class="flex-1 flex flex-col items-center gap-1">
+                      <span class="text-[9px] font-mono text-slate-300 font-bold">—</span>
+                      <div class="w-full bar-chart-bar bg-slate-100 rounded-t border-2 border-dashed border-slate-200" style="height: 30%"></div>
+                    </div>
+                    <div class="flex-1 flex flex-col items-center gap-1">
+                      <span class="text-[9px] font-mono text-slate-300 font-bold">—</span>
+                      <div class="w-full bar-chart-bar bg-slate-100 rounded-t border-2 border-dashed border-slate-200" style="height: 30%"></div>
+                    </div>
+                    <div class="flex-1 flex flex-col items-center gap-1">
+                      <span class="text-[9px] font-mono text-slate-300 font-bold">—</span>
+                      <div class="w-full bar-chart-bar bg-slate-100 rounded-t border-2 border-dashed border-slate-200" style="height: 30%"></div>
+                    </div>
+                    <div class="flex-1 flex flex-col items-center gap-1">
+                      <span class="text-[9px] font-mono text-slate-300 font-bold">—</span>
+                      <div class="w-full bar-chart-bar bg-slate-100 rounded-t border-2 border-dashed border-slate-200" style="height: 30%"></div>
+                    </div>
+                    <div class="flex-1 flex flex-col items-center gap-1">
+                      <span class="text-[9px] font-mono text-slate-300 font-bold">—</span>
+                      <div class="w-full bar-chart-bar bg-slate-100 rounded-t border-2 border-dashed border-slate-200" style="height: 30%"></div>
+                    </div>
+                    <div class="flex-1 flex flex-col items-center gap-1">
+                      <span class="text-[9px] font-mono text-slate-300 font-bold">—</span>
+                      <div class="w-full bar-chart-bar bg-slate-100 rounded-t border-2 border-dashed border-slate-200" style="height: 30%"></div>
+                    </div>
+                  </div>
+                  <!-- Target dashed line at 95% -->
+                  <div class="absolute w-full border-t-2 border-dashed border-success/50" style="bottom: 82%">
+                    <span class="absolute right-0 -top-5 text-[9px] text-success font-bold bg-green-50 px-1 rounded">Target 95%</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Month labels -->
+              <div class="flex gap-2 px-2 mt-2">
+                <div class="flex-1 text-center text-[9px] text-text-muted font-medium">Jan</div>
+                <div class="flex-1 text-center text-[9px] text-text-muted font-medium">Feb</div>
+                <div class="flex-1 text-center text-[9px] text-primary font-bold">Mar</div>
+                <div class="flex-1 text-center text-[9px] text-slate-300 font-medium">Apr</div>
+                <div class="flex-1 text-center text-[9px] text-slate-300 font-medium">Mei</div>
+                <div class="flex-1 text-center text-[9px] text-slate-300 font-medium">Jun</div>
+                <div class="flex-1 text-center text-[9px] text-slate-300 font-medium">Jul</div>
+                <div class="flex-1 text-center text-[9px] text-slate-300 font-medium">Ags</div>
+                <div class="flex-1 text-center text-[9px] text-slate-300 font-medium">Sep</div>
+                <div class="flex-1 text-center text-[9px] text-slate-300 font-medium">Okt</div>
+                <div class="flex-1 text-center text-[9px] text-slate-300 font-medium">Nov</div>
+                <div class="flex-1 text-center text-[9px] text-slate-300 font-medium">Des</div>
+              </div>
+            </div>
+
+            <!-- Epidemio Indeks Mini Cards -->
+            <div class="bg-surface rounded-lg border border-border-subtle shadow-card p-5 flex flex-col gap-3">
+              <h3 class="text-text-main font-bold text-sm uppercase tracking-wide flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-[18px]">biotech</span>
+                Indeks Entomologi
+              </h3>
+              <div class="grid grid-cols-2 gap-2 flex-1">
+                <div class="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                  <p class="text-[10px] font-bold text-text-muted uppercase mb-1">House Index</p>
+                  <p class="text-xl font-bold text-primary data-mono">7.8%</p>
+                  <div class="mt-1 h-1 bg-white rounded-full"><div class="h-full bg-primary/40 rounded-full" style="width: 7.8%"></div></div>
+                </div>
+                <div class="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                  <p class="text-[10px] font-bold text-text-muted uppercase mb-1">Container</p>
+                  <p class="text-xl font-bold text-primary data-mono">5.4%</p>
+                  <div class="mt-1 h-1 bg-white rounded-full"><div class="h-full bg-primary/40 rounded-full" style="width: 5.4%"></div></div>
+                </div>
+                <div class="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                  <p class="text-[10px] font-bold text-text-muted uppercase mb-1">Breteau</p>
+                  <p class="text-xl font-bold text-warning data-mono">14.2</p>
+                  <div class="text-[9px] text-text-muted mt-1">High risk zone</div>
+                </div>
+                <div class="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                  <p class="text-[10px] font-bold text-text-muted uppercase mb-1">Density Fig</p>
+                  <p class="text-xl font-bold text-warning data-mono">3</p>
+                  <span class="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded bg-warning/10 text-warning mt-1">Sedang</span>
+                </div>
+                <div class="col-span-2 bg-slate-50 rounded-lg p-3 border border-slate-100 flex items-center justify-between">
+                  <div>
+                    <p class="text-[10px] font-bold text-text-muted uppercase mb-1">Maya Index (MII)</p>
+                    <p class="text-xl font-bold text-primary data-mono">6.8%</p>
+                  </div>
+                  <div>
+                    <p class="text-[10px] font-bold text-text-muted uppercase mb-1">PSN Index</p>
+                    <p class="text-xl font-bold text-success data-mono">88.5%</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detail Rekap Table -->
+          <div class="bg-surface rounded-lg border border-border-subtle shadow-card overflow-hidden animate-slide-up">
+            <div class="px-5 py-4 border-b border-border-subtle flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                <h3 class="text-text-main font-bold text-sm uppercase tracking-wide flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary text-[18px]">table_chart</span>
+                  Rekap Detail Per Puskesmas
+                </h3>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">5 Puskesmas</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-text-muted">Periode: <strong class="text-text-main">Maret 2026</strong></span>
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr class="bg-slate-50/80 border-b border-border-subtle">
+                    <th class="px-5 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Puskesmas</th>
+                    <th class="px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider text-center">Kecamatan</th>
+                    <th class="px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider text-right">Rumah Diperiksa</th>
+                    <th class="px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider text-right">Rumah Positif</th>
+                    <th class="px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider text-center">ABJ Survei</th>
+                    <th class="px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider text-center">ABJ Wilayah</th>
+                    <th class="px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider text-center">Risk Level</th>
+                    <th class="px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-border-subtle">
+                  <!-- Row 1 -->
+                  <tr class="table-row-hover transition-colors">
+                    <td class="px-5 py-3.5">
+                      <p class="font-semibold text-text-main">PKM Cikutra Baru</p>
+                      <p class="text-[11px] text-text-muted">Kode: PKM-001</p>
+                    </td>
+                    <td class="px-4 py-3.5 text-center text-text-muted text-sm">Kec. Alok</td>
+                    <td class="px-4 py-3.5 text-right data-mono">1,200</td>
+                    <td class="px-4 py-3.5 text-right data-mono text-danger">46</td>
+                    <td class="px-4 py-3.5 text-center">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-success border border-green-200">96.2%</span>
+                    </td>
+                    <td class="px-4 py-3.5 text-center data-mono text-sm">95.5%</td>
+                    <td class="px-4 py-3.5 text-center">
+                      <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-green-50 text-success border border-green-200 uppercase">
+                        <span class="w-1.5 h-1.5 rounded-full bg-success"></span>Target
+                      </span>
+                    </td>
+                    <td class="px-4 py-3.5 text-center">
+                      <a href="laporan.puskesmas.html" class="inline-flex items-center gap-1 text-xs text-primary font-semibold hover:underline">
+                        <span class="material-symbols-outlined text-[14px]">open_in_new</span>Detail
+                      </a>
+                    </td>
+                  </tr>
+                  <!-- Row 2 -->
+                  <tr class="table-row-hover transition-colors">
+                    <td class="px-5 py-3.5">
+                      <p class="font-semibold text-text-main">PKM Sukajadi</p>
+                      <p class="text-[11px] text-text-muted">Kode: PKM-002</p>
+                    </td>
+                    <td class="px-4 py-3.5 text-center text-text-muted text-sm">Kec. Alok Barat</td>
+                    <td class="px-4 py-3.5 text-right data-mono">1,050</td>
+                    <td class="px-4 py-3.5 text-right data-mono text-danger">121</td>
+                    <td class="px-4 py-3.5 text-center">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-yellow-50 text-warning border border-yellow-200">88.5%</span>
+                    </td>
+                    <td class="px-4 py-3.5 text-center data-mono text-sm">89.2%</td>
+                    <td class="px-4 py-3.5 text-center">
+                      <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-yellow-50 text-warning border border-yellow-200 uppercase">
+                        <span class="w-1.5 h-1.5 rounded-full bg-warning"></span>Caution
+                      </span>
+                    </td>
+                    <td class="px-4 py-3.5 text-center">
+                      <a href="laporan.puskesmas.html" class="inline-flex items-center gap-1 text-xs text-primary font-semibold hover:underline">
+                        <span class="material-symbols-outlined text-[14px]">open_in_new</span>Detail
+                      </a>
+                    </td>
+                  </tr>
+                  <!-- Row 3 -->
+                  <tr class="table-row-hover transition-colors">
+                    <td class="px-5 py-3.5">
+                      <p class="font-semibold text-text-main">PKM Babakan Surabaya</p>
+                      <p class="text-[11px] text-text-muted">Kode: PKM-003</p>
+                    </td>
+                    <td class="px-4 py-3.5 text-center text-text-muted text-sm">Kec. Alok Timur</td>
+                    <td class="px-4 py-3.5 text-right data-mono">900</td>
+                    <td class="px-4 py-3.5 text-right data-mono text-danger">194</td>
+                    <td class="px-4 py-3.5 text-center">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-50 text-orange-600 border border-orange-200">78.4%</span>
+                    </td>
+                    <td class="px-4 py-3.5 text-center data-mono text-sm">80.1%</td>
+                    <td class="px-4 py-3.5 text-center">
+                      <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-orange-50 text-orange-600 border border-orange-200 uppercase">
+                        <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>Warning
+                      </span>
+                    </td>
+                    <td class="px-4 py-3.5 text-center">
+                      <a href="laporan.puskesmas.html" class="inline-flex items-center gap-1 text-xs text-primary font-semibold hover:underline">
+                        <span class="material-symbols-outlined text-[14px]">open_in_new</span>Detail
+                      </a>
+                    </td>
+                  </tr>
+                  <!-- Row 4 -->
+                  <tr class="table-row-hover transition-colors">
+                    <td class="px-5 py-3.5">
+                      <p class="font-semibold text-text-main">PKM Puter</p>
+                      <p class="text-[11px] text-text-muted">Kode: PKM-004</p>
+                    </td>
+                    <td class="px-4 py-3.5 text-center text-text-muted text-sm">Kec. Maumere</td>
+                    <td class="px-4 py-3.5 text-right data-mono">850</td>
+                    <td class="px-4 py-3.5 text-right data-mono text-danger">266</td>
+                    <td class="px-4 py-3.5 text-center">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-50 text-danger border border-red-200">68.7%</span>
+                    </td>
+                    <td class="px-4 py-3.5 text-center data-mono text-sm">72.4%</td>
+                    <td class="px-4 py-3.5 text-center">
+                      <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-50 text-danger border border-red-100 uppercase">
+                        <span class="w-1.5 h-1.5 rounded-full bg-danger"></span>At Risk
+                      </span>
+                    </td>
+                    <td class="px-4 py-3.5 text-center">
+                      <a href="laporan.puskesmas.html" class="inline-flex items-center gap-1 text-xs text-primary font-semibold hover:underline">
+                        <span class="material-symbols-outlined text-[14px]">open_in_new</span>Detail
+                      </a>
+                    </td>
+                  </tr>
+                  <!-- Row 5 -->
+                  <tr class="table-row-hover transition-colors">
+                    <td class="px-5 py-3.5">
+                      <p class="font-semibold text-text-main">PKM Ibrahim Adjie</p>
+                      <p class="text-[11px] text-text-muted">Kode: PKM-005</p>
+                    </td>
+                    <td class="px-4 py-3.5 text-center text-text-muted text-sm">Kec. Maumere</td>
+                    <td class="px-4 py-3.5 text-right data-mono">1,500</td>
+                    <td class="px-4 py-3.5 text-right data-mono text-danger">683</td>
+                    <td class="px-4 py-3.5 text-center">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-900/10 text-red-900 border border-red-900/20">54.2%</span>
+                    </td>
+                    <td class="px-4 py-3.5 text-center data-mono text-sm">58.1%</td>
+                    <td class="px-4 py-3.5 text-center">
+                      <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-900/10 text-red-900 border border-red-900/20 uppercase">
+                        <span class="w-1.5 h-1.5 rounded-full bg-red-900 animate-pulse"></span>Critical
+                      </span>
+                    </td>
+                    <td class="px-4 py-3.5 text-center">
+                      <a href="laporan.puskesmas.html" class="inline-flex items-center gap-1 text-xs text-primary font-semibold hover:underline">
+                        <span class="material-symbols-outlined text-[14px]">open_in_new</span>Detail
+                      </a>
+                    </td>
+                  </tr>
+                </tbody>
+                <!-- Footer -->
+                <tfoot class="bg-primary/5 border-t-2 border-primary/20">
+                  <tr>
+                    <td colspan="2" class="px-5 py-3.5 font-bold text-text-main text-sm">Total / Rata-rata</td>
+                    <td class="px-4 py-3.5 text-right font-bold data-mono">5,500</td>
+                    <td class="px-4 py-3.5 text-right font-bold data-mono text-danger">1,310</td>
+                    <td class="px-4 py-3.5 text-center">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-warning/10 text-warning border border-warning/20">76.2%</span>
+                    </td>
+                    <td class="px-4 py-3.5 text-center font-bold data-mono">79.1%</td>
+                    <td colspan="2" class="px-4 py-3.5 text-center text-xs text-text-muted">—</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+
+  </body>
+</html>

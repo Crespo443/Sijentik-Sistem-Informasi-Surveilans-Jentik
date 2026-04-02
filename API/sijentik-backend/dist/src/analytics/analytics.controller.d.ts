@@ -2,7 +2,7 @@ import { AnalyticsService } from './analytics.service';
 export declare class AnalyticsController {
     private analyticsService;
     constructor(analyticsService: AnalyticsService);
-    getDashboard(req: any, startDate?: string, endDate?: string): Promise<{
+    getDashboard(req: any, startDate?: string, endDate?: string, districtId?: string): Promise<{
         totalSurveys: number;
         abjSurvei: number;
         abjWilayah: number | null;
@@ -15,9 +15,11 @@ export declare class AnalyticsController {
         densityFigure: number;
         mayaIndex: string;
     }>;
-    getRegional(req: any): Promise<{
+    getRegional(req: any, startDate?: string, endDate?: string, districtId?: string): Promise<{
         name: string;
+        districtName: string | undefined;
         totalSurveys: number;
+        positiveHouses: number;
         targetHouses: number;
         abj: number;
         abjWilayah: number | null;
@@ -26,6 +28,12 @@ export declare class AnalyticsController {
         breteauIndex: number;
         densityFigure: number;
         riskLevel: string;
+    }[]>;
+    getTrend(req: any, year: string, districtId?: string): Promise<{
+        month: number;
+        totalSurveys: number;
+        positiveHouses: number;
+        abjSurvei: number | null;
     }[]>;
     getRecent(req: any): Promise<({
         village: {

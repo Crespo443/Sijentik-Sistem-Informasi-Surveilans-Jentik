@@ -5,7 +5,7 @@ export declare class AnalyticsService {
     private getWhereClause;
     private calculateDF;
     private calculateMayaIndex;
-    getDashboardKPIs(user: any, startDate?: string, endDate?: string): Promise<{
+    getDashboardKPIs(user: any, startDate?: string, endDate?: string, districtId?: string): Promise<{
         totalSurveys: number;
         abjSurvei: number;
         abjWilayah: number | null;
@@ -18,9 +18,11 @@ export declare class AnalyticsService {
         densityFigure: number;
         mayaIndex: string;
     }>;
-    getRegionalPerformance(user: any): Promise<{
+    getRegionalPerformance(user: any, startDate?: string, endDate?: string, districtId?: string): Promise<{
         name: string;
+        districtName: string | undefined;
         totalSurveys: number;
+        positiveHouses: number;
         targetHouses: number;
         abj: number;
         abjWilayah: number | null;
@@ -31,6 +33,12 @@ export declare class AnalyticsService {
         riskLevel: string;
     }[]>;
     private calculateRegionStats;
+    getAbjTrend(user: any, year: string, districtId?: string): Promise<{
+        month: number;
+        totalSurveys: number;
+        positiveHouses: number;
+        abjSurvei: number | null;
+    }[]>;
     getRecentActivity(user: any): Promise<({
         village: {
             id: string;

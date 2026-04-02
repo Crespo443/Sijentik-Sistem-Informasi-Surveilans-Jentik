@@ -23,11 +23,14 @@ let AnalyticsController = class AnalyticsController {
     constructor(analyticsService) {
         this.analyticsService = analyticsService;
     }
-    getDashboard(req, startDate, endDate) {
-        return this.analyticsService.getDashboardKPIs(req.user, startDate, endDate);
+    getDashboard(req, startDate, endDate, districtId) {
+        return this.analyticsService.getDashboardKPIs(req.user, startDate, endDate, districtId);
     }
-    getRegional(req) {
-        return this.analyticsService.getRegionalPerformance(req.user);
+    getRegional(req, startDate, endDate, districtId) {
+        return this.analyticsService.getRegionalPerformance(req.user, startDate, endDate, districtId);
+    }
+    getTrend(req, year, districtId) {
+        return this.analyticsService.getAbjTrend(req.user, year, districtId);
     }
     getRecent(req) {
         return this.analyticsService.getRecentActivity(req.user);
@@ -42,18 +45,31 @@ __decorate([
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Query)('startDate')),
     __param(2, (0, common_1.Query)('endDate')),
+    __param(3, (0, common_1.Query)('districtId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:paramtypes", [Object, String, String, String]),
     __metadata("design:returntype", void 0)
 ], AnalyticsController.prototype, "getDashboard", null);
 __decorate([
     (0, common_1.Get)('regional-performance'),
     (0, roles_decorator_1.Roles)('ADMIN', 'HEALTHCARE_MANAGER'),
     __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)('startDate')),
+    __param(2, (0, common_1.Query)('endDate')),
+    __param(3, (0, common_1.Query)('districtId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, String, String, String]),
     __metadata("design:returntype", void 0)
 ], AnalyticsController.prototype, "getRegional", null);
+__decorate([
+    (0, common_1.Get)('trend'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)('year')),
+    __param(2, (0, common_1.Query)('districtId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", void 0)
+], AnalyticsController.prototype, "getTrend", null);
 __decorate([
     (0, common_1.Get)('recent-activity'),
     __param(0, (0, common_1.Req)()),

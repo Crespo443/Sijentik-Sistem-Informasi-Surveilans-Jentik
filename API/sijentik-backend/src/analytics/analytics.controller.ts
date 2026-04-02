@@ -14,14 +14,29 @@ export class AnalyticsController {
     @Req() req: any,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('districtId') districtId?: string,
   ) {
-    return this.analyticsService.getDashboardKPIs(req.user, startDate, endDate);
+    return this.analyticsService.getDashboardKPIs(req.user, startDate, endDate, districtId);
   }
 
   @Get('regional-performance')
   @Roles('ADMIN', 'HEALTHCARE_MANAGER')
-  getRegional(@Req() req: any) {
-    return this.analyticsService.getRegionalPerformance(req.user);
+  getRegional(
+    @Req() req: any,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('districtId') districtId?: string,
+  ) {
+    return this.analyticsService.getRegionalPerformance(req.user, startDate, endDate, districtId);
+  }
+
+  @Get('trend')
+  getTrend(
+    @Req() req: any,
+    @Query('year') year: string,
+    @Query('districtId') districtId?: string,
+  ) {
+    return this.analyticsService.getAbjTrend(req.user, year, districtId);
   }
 
   @Get('recent-activity')
