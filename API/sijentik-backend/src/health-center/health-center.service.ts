@@ -52,7 +52,7 @@ export class HealthCenterService {
     }
     const pkm = await this.prisma.healthCenter.findUnique({
       where: { id },
-      include: { district: true, accessCodes: true },
+      include: { district: { include: { villages: true } }, accessCodes: true },
     });
     if (!pkm) throw new NotFoundException('PKM not found');
     return pkm;

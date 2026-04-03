@@ -62,6 +62,13 @@ export declare class HealthCenterService {
     }>;
     findOne(id: string): Promise<{
         district: {
+            villages: {
+                id: string;
+                type: import("@prisma/client").$Enums.VillageType;
+                name: string;
+                districtId: string;
+            }[];
+        } & {
             id: string;
             createdAt: Date;
             name: string;

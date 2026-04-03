@@ -5,19 +5,19 @@
   body {
     @apply bg-background-light text-text-main font-sans antialiased;
   }
-  
+
   /* Material Symbols Optimization: Prevent font-to-text flicker */
   .material-symbols-outlined {
     font-display: block;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     -moz-osx-font-smoothing: grayscale;
-    font-feature-settings: 'liga';
+    font-feature-settings: "liga";
     display: inline-block;
     overflow: hidden;
     vertical-align: middle;
     /* Optional: make it invisible if the font isn't loaded */
-    font-family: 'Material Symbols Outlined';
+    font-family: "Material Symbols Outlined";
   }
 }
 
@@ -57,12 +57,17 @@
     @apply -translate-y-1 shadow-md border-primary/20;
   }
   .accent-bar {
-    @apply absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary opacity-0 transition-opacity duration-300;
+    @apply absolute top-0 left-0 w-full h-1 opacity-0 transition-opacity duration-300;
+    background: linear-gradient(
+      90deg,
+      theme(colors.primary) 0%,
+      theme(colors.secondary) 100%
+    );
   }
   .kpi-card:hover .accent-bar {
     @apply opacity-100;
   }
-  
+
   /* Buttons */
   .btn-primary {
     @apply flex items-center justify-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors shadow-sm ring-1 ring-primary/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
@@ -75,33 +80,56 @@
   }
 
   /* Risk tile animations (Peta Risiko) */
-  .risk-tile { 
-    @apply transition-colors duration-200 cursor-pointer; 
+  .risk-tile {
+    @apply transition-colors duration-200 cursor-pointer;
   }
-  .risk-tile:hover { 
+  .risk-tile:hover {
     @apply scale-[1.04] z-10;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15); 
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   }
 
   /* Risk color classes */
-  .risk-aman     { background: linear-gradient(135deg, #16A34A 0%, #22c55e 100%); }
-  .risk-waspada  { background: linear-gradient(135deg, #D97706 0%, #f59e0b 100%); }
-  .risk-bahaya   { background: linear-gradient(135deg, #DC2626 0%, #ef4444 100%); }
-  .risk-kritis   { background: linear-gradient(135deg, #7f1d1d 0%, #DC2626 100%); }
-  .risk-nodata   { background: linear-gradient(135deg, #94a3b8 0%, #cbd5e1 100%); }
+  .risk-aman {
+    background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+  }
+  .risk-waspada {
+    background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+  }
+  .risk-bahaya {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  }
+  .risk-kritis {
+    background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
+  }
+  .risk-nodata {
+    background: linear-gradient(135deg, #94a3b8 0%, #cbd5e1 100%);
+  }
 
   /* Tooltip */
-  .tooltip-box { 
-    display: none; position: absolute; z-index: 50; background: #0F172A; color: white;
-    border-radius: 8px; padding: 12px 14px; width: 200px; font-size: 12px; pointer-events: none;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+  .tooltip-box {
+    display: none;
+    position: absolute;
+    z-index: 50;
+    background: #0f172a;
+    color: white;
+    border-radius: 8px;
+    padding: 12px 14px;
+    width: 200px;
+    font-size: 12px;
+    pointer-events: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   }
-  .risk-tile:hover .tooltip-box { display: block; bottom: 110%; left: 50%; transform: translateX(-50%); }
+  .risk-tile:hover .tooltip-box {
+    display: block;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
 
   /* Peta Risiko — Leaflet popup override */
   .peta-risiko-popup {
     min-width: 200px;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: "Inter", system-ui, sans-serif;
   }
   .peta-risiko-popup .popup-status-bar {
     display: flex;
@@ -146,16 +174,16 @@
     padding: 0 !important;
     border-radius: 8px !important;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
   }
   .leaflet-popup-content {
     margin: 0 !important;
   }
   .peta-risiko-tooltip {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: "Inter", system-ui, sans-serif;
     font-size: 12px !important;
     padding: 6px 10px !important;
     border-radius: 6px !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
   }
 }
