@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
-import Header from '../components/Header';
+import { useState, useEffect } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import Sidebar from "../components/Sidebar";
+import Header from "../components/Header";
+import RouteTransition from "../components/RouteTransition";
 
 const AdminLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -10,9 +11,9 @@ const AdminLayout = () => {
 
   // Authentication check
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token) {
-      navigate('/login');
+      navigate("/login");
     }
   }, [navigate]);
 
@@ -28,8 +29,8 @@ const AdminLayout = () => {
     <div className="flex h-screen w-full bg-background-light overflow-hidden font-sans text-text-main relative">
       {/* Overlay for mobile */}
       {isSidebarOpen ? (
-        <div 
-          className="fixed inset-0 bg-black/50 z-20 lg:hidden backdrop-blur-sm transition-opacity" 
+        <div
+          className="fixed inset-0 bg-black/50 z-20 lg:hidden backdrop-blur-sm transition-opacity"
           onClick={closeSidebar}
           aria-hidden="true"
         />
@@ -40,7 +41,9 @@ const AdminLayout = () => {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background-light">
         <Header onMenuClick={toggleSidebar} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth custom-scroll">
-          <Outlet />
+          <RouteTransition>
+            <Outlet />
+          </RouteTransition>
         </main>
       </div>
     </div>

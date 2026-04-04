@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import logo from "../assets/Logo.png";
 
@@ -13,6 +13,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const location = useLocation();
   const isPuskesmasReportActive =
     location.pathname.startsWith("/laporan/puskesmas");
+  const navigate = useNavigate();
 
   const laporanPuskesmasPath = (() => {
     try {
@@ -239,7 +240,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             onClick={() => {
               localStorage.removeItem("token");
               localStorage.removeItem("user");
-              window.location.href = "/login";
+              navigate("/login");
             }}
             aria-label="Logout"
             className="text-slate-400 hover:text-white transition-colors"

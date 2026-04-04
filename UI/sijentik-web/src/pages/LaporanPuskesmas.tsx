@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import api from "../lib/api";
 
 type AnyObject = Record<string, any>;
@@ -86,15 +86,35 @@ const getSurveyStats = (survey: AnyObject) => {
 export default function LaporanPuskesmas() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [pkm, setPkm] = useState<AnyObject | null>(null);
   const [healthCenters, setHealthCenters] = useState<AnyObject[]>([]);
   const [surveys, setSurveys] = useState<AnyObject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [year, setYear] = useState(String(new Date().getFullYear()));
-  const [searchTerm, setSearchTerm] = useState("");
-  const [villageFilter, setVillageFilter] = useState("");
+  const [year, setYear] = useState(
+    searchParams.get("year") || String(new Date().getFullYear()),
+  );
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams.get("search") || "",
+  );
+  const [villageFilter, setVillageFilter] = useState(
+    searchParams.get("villageId") || "",
+  );
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams();
+    nextParams.set("year", year);
+
+    if (searchTerm) nextParams.set("search", searchTerm);
+    else nextParams.delete("search");
+
+    if (villageFilter) nextParams.set("villageId", villageFilter);
+    else nextParams.delete("villageId");
+
+    setSearchParams(nextParams, { replace: true });
+  }, [searchTerm, setSearchParams, villageFilter, year]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -504,7 +524,6 @@ export default function LaporanPuskesmas() {
                   ))}
                 </select>
               </div>
-             
             </div>
             <div className="flex items-center gap-2 text-sm text-text-muted">
               <span className="material-symbols-outlined text-[16px]">
