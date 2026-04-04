@@ -37,6 +37,8 @@ export class SurveyController {
     @Query('status') status?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortDir') sortDir?: 'asc' | 'desc',
   ) {
     return this.surveyService.findAll(req.user, {
       page,
@@ -47,6 +49,8 @@ export class SurveyController {
       status,
       startDate,
       endDate,
+      sortBy,
+      sortDir,
     });
   }
 

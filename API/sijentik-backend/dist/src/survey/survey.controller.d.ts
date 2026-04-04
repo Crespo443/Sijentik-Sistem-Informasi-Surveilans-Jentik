@@ -33,7 +33,7 @@ export declare class SurveyController {
         accessCodeId: string;
         villageId: string;
     }>;
-    findAll(req: any, page?: number, limit?: number, search?: string, villageId?: string, puskesmasId?: string, status?: string, startDate?: string, endDate?: string): Promise<{
+    findAll(req: any, page?: number, limit?: number, search?: string, villageId?: string, puskesmasId?: string, status?: string, startDate?: string, endDate?: string, sortBy?: string, sortDir?: 'asc' | 'desc'): Promise<{
         data: ({
             accessCode: {
                 healthCenter: {

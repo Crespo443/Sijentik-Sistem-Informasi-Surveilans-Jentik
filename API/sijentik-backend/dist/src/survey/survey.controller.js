@@ -26,7 +26,7 @@ let SurveyController = class SurveyController {
     create(dto, req) {
         return this.surveyService.create(dto, req.user);
     }
-    findAll(req, page, limit, search, villageId, puskesmasId, status, startDate, endDate) {
+    findAll(req, page, limit, search, villageId, puskesmasId, status, startDate, endDate, sortBy, sortDir) {
         return this.surveyService.findAll(req.user, {
             page,
             limit,
@@ -36,6 +36,8 @@ let SurveyController = class SurveyController {
             status,
             startDate,
             endDate,
+            sortBy,
+            sortDir,
         });
     }
     findOne(id) {
@@ -69,8 +71,10 @@ __decorate([
     __param(6, (0, common_1.Query)('status')),
     __param(7, (0, common_1.Query)('startDate')),
     __param(8, (0, common_1.Query)('endDate')),
+    __param(9, (0, common_1.Query)('sortBy')),
+    __param(10, (0, common_1.Query)('sortDir')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Number, Number, String, String, String, String, String, String]),
+    __metadata("design:paramtypes", [Object, Number, Number, String, String, String, String, String, String, String, String]),
     __metadata("design:returntype", void 0)
 ], SurveyController.prototype, "findAll", null);
 __decorate([

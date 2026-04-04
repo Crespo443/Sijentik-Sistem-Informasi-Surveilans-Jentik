@@ -341,6 +341,8 @@ export default function LaporanPuskesmas() {
           hi,
           ci,
           surveyor: survey.surveyorName || "-",
+          houseOwner: survey.houseOwner || "-",
+          occupantCount: survey.occupantCount || 0,
         };
       });
   }, [filteredSurveys]);
@@ -502,19 +504,7 @@ export default function LaporanPuskesmas() {
                   ))}
                 </select>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
-                  Tampilan:
-                </span>
-                <div className="flex rounded border border-border-subtle bg-slate-50 p-0.5 gap-0.5">
-                  <button className="px-3 py-1 rounded text-xs transition-all bg-white text-primary border border-border-subtle shadow-sm font-semibold">
-                    Bulanan
-                  </button>
-                  <button className="px-3 py-1 rounded text-xs text-text-muted hover:text-text-main transition-all">
-                    Mingguan
-                  </button>
-                </div>
-              </div>
+             
             </div>
             <div className="flex items-center gap-2 text-sm text-text-muted">
               <span className="material-symbols-outlined text-[16px]">
@@ -1143,16 +1133,16 @@ export default function LaporanPuskesmas() {
                       Tgl Survey
                     </th>
                     <th className="px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider text-right">
-                      Rmh Diperiksa
+                      Container Diperiksa
                     </th>
                     <th className="px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider text-right">
-                      Rmh Positif
+                      Container Positif
                     </th>
                     <th className="px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider text-center">
-                      HI (%)
+                      Nama KK
                     </th>
                     <th className="px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider text-center">
-                      CI (%)
+                      Jumlah Penghuni
                     </th>
                     <th className="px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider text-center">
                       Petugas
@@ -1174,15 +1164,6 @@ export default function LaporanPuskesmas() {
                     </tr>
                   ) : (
                     recentSurveys.map((survey) => {
-                      const hiLabel =
-                        survey.hi > 0 ? `${survey.hi.toFixed(1)}%` : "0.0%";
-                      const hiBadge =
-                        survey.hi > 15
-                          ? "bg-danger/10 text-danger"
-                          : survey.hi > 5
-                            ? "bg-warning/10 text-warning"
-                            : "bg-success/10 text-success";
-
                       return (
                         <tr
                           key={survey.id}
@@ -1207,15 +1188,11 @@ export default function LaporanPuskesmas() {
                           <td className="px-4 py-3.5 text-right data-mono text-danger">
                             {survey.positive}
                           </td>
-                          <td className="px-4 py-3.5 text-center">
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${hiBadge}`}
-                            >
-                              {hiLabel}
-                            </span>
+                          <td className="px-4 py-3.5 text-center font-semibold text-text-main truncate max-w-40">
+                            {survey.houseOwner}
                           </td>
                           <td className="px-4 py-3.5 text-center data-mono text-xs">
-                            {survey.ci.toFixed(1)}%
+                            {survey.occupantCount}
                           </td>
                           <td className="px-4 py-3.5 text-center text-xs text-text-muted">
                             {survey.surveyor}

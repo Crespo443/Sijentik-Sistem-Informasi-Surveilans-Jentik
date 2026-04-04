@@ -199,7 +199,8 @@ export default function Login() {
               Surveilans Jentik Nyamuk Aedes Aegypti di Kabupaten Sikka, NTT
             </h2>
             <p className="text-lg text-white/80 font-light leading-relaxed max-w-xl border-l-2 border-primary pl-6">
-              Admin, Puskesmas Manager, Petugas Survey.
+              Admin, Puskesmas Manager, Petugas Survey. <br />
+              by Yospehina
             </p>
           </div>
           

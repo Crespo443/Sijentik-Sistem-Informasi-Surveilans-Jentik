@@ -42,6 +42,8 @@ export declare class SurveyService {
         endDate?: string;
         puskesmasId?: string;
         status?: string;
+        sortBy?: string;
+        sortDir?: 'asc' | 'desc';
     }): Promise<{
         data: ({
             accessCode: {

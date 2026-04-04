@@ -22,6 +22,7 @@ export default function DataSurveyList() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusJentik, setStatusJentik] = useState('');
+  const [sortOption, setSortOption] = useState('date-desc');
 
   const fetchSurveys = async (page = 1) => {
     setLoading(true);
@@ -36,6 +37,11 @@ export default function DataSurveyList() {
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
       if (statusJentik) params.append('status', statusJentik);
+      if (sortOption) {
+        const [sortBy, sortDir] = sortOption.split('-');
+        if (sortBy) params.append('sortBy', sortBy);
+        if (sortDir) params.append('sortDir', sortDir);
+      }
 
       const res = await api.get(`/survey?${params.toString()}`);
       
@@ -89,6 +95,7 @@ export default function DataSurveyList() {
     setStartDate('');
     setEndDate('');
     setStatusJentik('');
+    setSortOption('date-desc');
     // Need a slight delay to allow state to update before fetch, or pass directly
     setTimeout(() => fetchSurveys(1), 0);
   };
@@ -143,7 +150,7 @@ export default function DataSurveyList() {
           <div className="px-5 pb-5 border-t border-border-subtle">
             <div className="pt-4"></div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-text-muted">Cari</label>
                 <div className="flex gap-2">
@@ -183,6 +190,27 @@ export default function DataSurveyList() {
                   styles={selectCustomStyles}
                   placeholder="Cari Kelurahan..."
                   isClearable
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-text-muted z-20 relative">Urutkan</label>
+                <Select
+                  options={[
+                    { value: 'date-desc', label: 'Tanggal (Terbaru)' },
+                    { value: 'date-asc', label: 'Tanggal (Terlama)' },
+                    { value: 'houseOwner-asc', label: 'Nama KK (A-Z)' },
+                    { value: 'houseOwner-desc', label: 'Nama KK (Z-A)' },
+                  ]}
+                  value={{ 
+                    value: sortOption, 
+                    label: sortOption === 'date-desc' ? 'Tanggal (Terbaru)' 
+                         : sortOption === 'date-asc' ? 'Tanggal (Terlama)' 
+                         : sortOption === 'houseOwner-asc' ? 'Nama KK (A-Z)' 
+                         : 'Nama KK (Z-A)' 
+                  }}
+                  onChange={(selected: any) => setSortOption(selected?.value || 'date-desc')}
+                  styles={selectCustomStyles}
+                  isSearchable={false}
                 />
               </div>
             </div>

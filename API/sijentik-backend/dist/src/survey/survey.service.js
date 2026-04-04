@@ -51,7 +51,7 @@ let SurveyService = class SurveyService {
         });
     }
     async findAll(user, query) {
-        const { page = 1, limit = 10, search, villageId, startDate, endDate, puskesmasId, status, } = query;
+        const { page = 1, limit = 10, search, villageId, startDate, endDate, puskesmasId, status, sortBy, sortDir, } = query;
         const skip = (page - 1) * limit;
         const where = {};
         if (user.role === 'SURVEYOR' || user.role === 'HEALTHCARE_MANAGER') {
@@ -69,8 +69,17 @@ let SurveyService = class SurveyService {
         }
         if (villageId)
             where.villageId = villageId;
-        if (startDate && endDate)
-            where.surveyDate = { gte: new Date(startDate), lte: new Date(endDate) };
+        if (startDate || endDate) {
+            where.surveyDate = {};
+            if (startDate) {
+                where.surveyDate.gte = new Date(startDate);
+            }
+            if (endDate) {
+                const endDay = new Date(endDate);
+                endDay.setUTCHours(23, 59, 59, 999);
+                where.surveyDate.lte = endDay;
+            }
+        }
         if (status === 'Positif') {
             where.containers = { some: { positiveCount: { gt: 0 } } };
         }
@@ -88,7 +97,11 @@ let SurveyService = class SurveyService {
                     containers: true,
                     accessCode: { include: { healthCenter: true } },
                 },
-                orderBy: { createdAt: 'desc' },
+                orderBy: sortBy === 'surveyDate'
+                    ? { surveyDate: sortDir || 'desc' }
+                    : sortBy === 'houseOwner'
+                        ? { houseOwner: sortDir || 'asc' }
+                        : { createdAt: sortDir || 'desc' },
             }),
         ]);
         return {

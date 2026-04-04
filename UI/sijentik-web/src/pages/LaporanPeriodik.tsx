@@ -437,10 +437,11 @@ export default function LaporanPeriodik() {
                     ))
                   )}
                 </tbody>
-                <tfoot className="bg-primary/5 border-t-2 border-primary/20 sticky bottom-0 z-10">
+                <tfoot className="bg-primary/5 border-t-2 border-primary/20">
                   <tr>
                     <td colSpan={2} className="px-5 py-3.5 font-bold text-text-main text-sm">Total / Rata-rata</td>
                     <td className="px-5 py-3.5 text-right font-bold font-mono">{kpis?.totalSurveys || 0}</td>
+
                     <td className="px-5 py-3.5 text-right font-bold font-mono text-danger">{kpis?.positiveHouses || 0}</td>
                     <td className="px-5 py-3.5 text-center">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${kpis?.abjSurvei >= 95 ? 'bg-green-50 text-success border-green-200' : 'bg-warning/10 text-warning border-warning/20'}`}>{kpis?.abjSurvei || 0}%</span>
