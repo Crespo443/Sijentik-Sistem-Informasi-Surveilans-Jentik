@@ -144,7 +144,7 @@ export default function PetaRisiko() {
                     fillOpacity: 0.7,
                     weight: 2
                   }}
-                  radius={isPositif ? 8 : 5}
+                  radius={isPositif ? 4 : 3}
                 >
                   <Popup>
                     <div className="text-sm font-sans min-w-37.5">
