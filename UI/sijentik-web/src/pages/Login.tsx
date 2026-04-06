@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import Select from 'react-select';
 import { selectCustomStyles } from '../lib/selectCustomStyles';
+import logo from "../assets/Logo.png";
 export default function Login() {
   const [name, setName] = useState('');
   const [accessCode, setAccessCode] = useState('');
@@ -46,7 +47,7 @@ export default function Login() {
         <div className="w-full max-w-md flex flex-col gap-8">
           <div className="flex flex-col items-center text-center gap-4">
             <div className="w-20 h-20 rounded-full flex items-center justify-center mb-2 bg-slate-50">
-              <span className="material-symbols-outlined text-4xl text-primary">pest_control</span>
+              <span className="material-symbols-outlined text-4xl text-primary"><img src={logo} alt="Sijentik Logo" /></span>
             </div>
             <div>
               <h1 className="font-heading text-2xl lg:text-3xl font-bold text-text-main tracking-tight">
