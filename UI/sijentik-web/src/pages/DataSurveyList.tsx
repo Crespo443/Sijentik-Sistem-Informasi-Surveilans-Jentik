@@ -636,10 +636,10 @@ function SurveyRow({
       <td className="px-4 py-2 whitespace-nowrap text-text-muted text-sm">
         {kk}
       </td>
-      <td className="px-4 py-2 whitespace-nowrap text-center text-text-muted font-mono text-xs">
+      <td className="px-4 py-2 whitespace-nowrap text-center text-text-muted font-mono text-sm">
         {kontainer}
       </td>
-      <td className="px-4 py-2 whitespace-nowrap text-center font-semibold text-danger font-mono text-xs">
+      <td className="px-4 py-2 whitespace-nowrap text-center text-danger font-mono text-sm">
         {positif}
       </td>
       <td className="px-4 py-2 whitespace-nowrap text-center">
@@ -662,7 +662,7 @@ function SurveyRow({
           className="inline-flex items-center justify-center w-8 h-8 rounded text-primary hover:bg-primary/10 transition-colors"
           title="Detail"
         >
-          <span className="material-symbols-outlined text-[18px]">
+          <span className="material-symbols-outlined text-[10px]">
             visibility
           </span>
         </Link>
@@ -671,7 +671,7 @@ function SurveyRow({
           className="inline-flex items-center justify-center w-8 h-8 rounded text-text-muted hover:text-primary hover:bg-primary/10 transition-colors"
           title="Edit"
         >
-          <span className="material-symbols-outlined text-[18px]">edit</span>
+          <span className="material-symbols-outlined text-[10px]">edit</span>
         </Link>
         {getUserRole() !== "SURVEYOR" ? (
           <button
@@ -680,7 +680,7 @@ function SurveyRow({
             className="inline-flex items-center justify-center w-8 h-8 rounded text-danger hover:bg-danger/10 transition-colors"
             title="Hapus"
           >
-            <span className="material-symbols-outlined text-[18px]">
+            <span className="material-symbols-outlined text-[10px]">
               delete
             </span>
           </button>

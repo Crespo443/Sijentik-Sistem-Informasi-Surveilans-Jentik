@@ -51,6 +51,7 @@ export default function DataSurveyDetail() {
               ID: {survey.id.substring(0, 8).toUpperCase()}
             </span>
             <Badge variant={statusColor}>{statusText}</Badge>
+            <Button variant="secondary" onClick={() => navigate('/data-survey')} icon="arrow_back">Kembali</Button>
             <Button variant="primary" onClick={() => navigate(`/data-survey/edit/${id}`)} icon="edit">Edit</Button>
           </div>
         }
@@ -79,12 +80,20 @@ export default function DataSurveyDetail() {
               <DataField label="Jumlah Penghuni (Orang)" value={survey.occupantCount?.toString() || '-'} />
               <div className="pt-1">
                 <span className="text-xs font-medium text-text-muted mb-1 block">Koordinat GPS</span>
-                <div className="flex justify-between items-center gap-2 bg-white px-3 py-2 border border-border-subtle rounded text-sm text-text-main font-medium shadow-sm">
+                <div className="flex justify-between items-center gap-2 bg-white px-3 py-2 border border-border-subtle rounded text-sm text-text-main font-medium shadow-sm mb-3">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-text-muted text-[16px]">pin_drop</span>
                     {survey.latitude && survey.longitude ? `${survey.latitude}, ${survey.longitude}` : 'Tidak ada koordinat'}
                   </div>
                 </div>
+                <Button 
+                  variant="secondary" 
+                  onClick={() => navigate(`/data-survey/map/${id}`)} 
+                  className="w-full"
+                  icon="map"
+                >
+                  Lihat di Peta
+                </Button>
               </div>
             </div>
           </div>
@@ -166,6 +175,11 @@ export default function DataSurveyDetail() {
                 {survey.notes || <span className="italic text-slate-400">Tidak ada catatan</span>}
             </div>
           </div>
+        </div>
+
+        <div className="flex justify-end gap-3 px-1">
+          <Button variant="secondary" onClick={() => navigate('/data-survey')} icon="arrow_back">Kembali ke Daftar</Button>
+          <Button variant="primary" onClick={() => navigate(`/data-survey/edit/${id}`)} icon="edit">Edit Data</Button>
         </div>
       </div>
     </div>

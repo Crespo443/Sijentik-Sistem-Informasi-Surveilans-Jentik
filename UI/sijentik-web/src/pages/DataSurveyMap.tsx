@@ -75,11 +75,7 @@ export default function DataSurveyMap() {
             </div>
             <div>
               <span className="text-xs text-text-muted block">Alamat</span>
-              <span>{survey.address || '-'}</span>
-            </div>
-            <div>
-              <span className="text-xs text-text-muted block">Kelurahan</span>
-              <span>{survey.village?.name}</span>
+              <span>{survey.address || '-'}</span>, <span>{survey.village?.name}</span>
             </div>
             <div className="pt-2 border-t border-slate-200">
               <span className="text-xs text-text-muted block">Koordinat</span>
@@ -91,7 +87,7 @@ export default function DataSurveyMap() {
         <MapContainer 
           center={pos} 
           zoom={18} 
-          style={{ height: '100%', width: '100%', zIndex: 1 }}
+          style={{ height: '100%', minHeight: '500px', width: '100%', zIndex: 1 }}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '../components/common/PageHeader';
 import { Button } from '../components/common/Button';
 import api from '../lib/api';
@@ -44,6 +45,7 @@ const INTERVENTION_TYPES = [
 
 export default function SurveyInput() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [villages, setVillages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -158,6 +160,7 @@ export default function SurveyInput() {
       };
 
       await api.post('/survey/submit', payload);
+      queryClient.invalidateQueries({ queryKey: ["surveys"] });
       alert('Survei berhasil disimpan!');
       navigate('/data-survey');
     } catch (err: any) {
