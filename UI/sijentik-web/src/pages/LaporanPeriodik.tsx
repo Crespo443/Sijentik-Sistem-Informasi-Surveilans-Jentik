@@ -659,7 +659,7 @@ export default function LaporanPeriodik() {
                   <span className="material-symbols-outlined text-primary text-[18px]">
                     table_chart
                   </span>
-                  Rekap Detail Per Wilayah
+                  Rekap Per Puskesmas
                 </h3>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
                   {regionalData.length} Wilayah

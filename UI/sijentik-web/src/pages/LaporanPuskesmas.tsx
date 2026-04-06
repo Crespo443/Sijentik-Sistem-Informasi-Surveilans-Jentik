@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import Select from "react-select";
+import { selectCustomStyles } from "../lib/selectCustomStyles";
 import api from "../lib/api";
 
 type AnyObject = Record<string, any>;
@@ -469,19 +471,18 @@ export default function LaporanPuskesmas() {
         </div>
 
         <div className="flex items-center gap-3">
-          <select
-            value={pkm.id}
-            onChange={(event) =>
-              navigate(`/laporan/puskesmas/${event.target.value}`)
-            }
-            className="px-3 py-1.5 text-sm border border-border-subtle rounded bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors text-text-main font-medium max-w-55"
-          >
-            {healthCenters.map((healthCenter) => (
-              <option key={healthCenter.id} value={healthCenter.id}>
-                {healthCenter.name}
-              </option>
-            ))}
-          </select>
+          <div className="w-64 z-[100]">
+            <Select
+              options={healthCenters.map((hc) => ({ value: hc.id, label: hc.name }))}
+              value={pkm ? { value: pkm.id, label: pkm.name } : null}
+              onChange={(selected: any) =>
+                navigate(`/laporan/puskesmas/${selected?.value}`)
+              }
+              styles={selectCustomStyles}
+              isSearchable={false}
+              menuPortalTarget={document.body}
+            />
+          </div>
           <button
             onClick={() => window.print()}
             className="flex items-center gap-2 bg-white border border-border-subtle text-text-muted px-3 py-1.5 rounded text-sm font-medium hover:bg-slate-50 hover:text-text-main transition-colors"
@@ -512,17 +513,16 @@ export default function LaporanPuskesmas() {
                 <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
                   Tahun:
                 </span>
-                <select
-                  value={year}
-                  onChange={(event) => setYear(event.target.value)}
-                  className="px-3 py-1.5 text-sm border border-border-subtle rounded bg-white focus:border-primary outline-none"
-                >
-                  {availableYears.map((availableYear) => (
-                    <option key={availableYear} value={availableYear}>
-                      {availableYear}
-                    </option>
-                  ))}
-                </select>
+                <div className="w-32 z-50 relative">
+                  <Select
+                    options={availableYears.map((y) => ({ value: String(y), label: String(y) }))}
+                    value={{ value: year, label: year }}
+                    onChange={(selected: any) => setYear(selected?.value)}
+                    styles={selectCustomStyles}
+                    isSearchable={false}
+                    menuPortalTarget={document.body}
+                  />
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2 text-sm text-text-muted">
@@ -1126,18 +1126,21 @@ export default function LaporanPuskesmas() {
                     className="pl-8 pr-3 py-1.5 text-xs border border-border-subtle rounded bg-slate-50 focus:bg-white focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all w-44"
                   />
                 </div>
-                <select
-                  value={villageFilter}
-                  onChange={(event) => setVillageFilter(event.target.value)}
-                  className="px-3 py-1.5 text-xs border border-border-subtle rounded bg-white focus:border-primary outline-none"
-                >
-                  <option value="">Semua Kelurahan</option>
-                  {(pkm.district?.villages || []).map((village: AnyObject) => (
-                    <option key={village.id} value={village.id}>
-                      {village.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="w-56 z-40 relative">
+                  <Select
+                    options={[
+                      { value: "", label: "Semua Kelurahan" },
+                      ...(pkm.district?.villages || []).map((v: AnyObject) => ({ value: v.id, label: v.name }))
+                    ]}
+                    value={villageFilter 
+                      ? { value: villageFilter, label: pkm.district?.villages?.find((v: AnyObject) => v.id === villageFilter)?.name || "Semua Kelurahan" } 
+                      : { value: "", label: "Semua Kelurahan" }}
+                    onChange={(selected: any) => setVillageFilter(selected?.value || "")}
+                    styles={selectCustomStyles}
+                    isClearable={false}
+                    menuPortalTarget={document.body}
+                  />
+                </div>
               </div>
             </div>
 

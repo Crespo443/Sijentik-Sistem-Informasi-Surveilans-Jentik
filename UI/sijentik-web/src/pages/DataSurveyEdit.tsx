@@ -62,7 +62,8 @@ export default function DataSurveyEdit() {
     lat: '',
     lng: '',
     puskesmas: '',
-    petugas: ''
+    petugas: '',
+    surveyDate: ''
   });
 
   const [containerData, setContainerData] = useState(
@@ -96,7 +97,8 @@ export default function DataSurveyEdit() {
           lat: s.latitude ? s.latitude.toString() : '',
           lng: s.longitude ? s.longitude.toString() : '',
           puskesmas: s.accessCode?.healthCenter?.name || '-',
-          petugas: s.surveyorName || '-'
+          petugas: s.surveyorName || '-',
+          surveyDate: s.surveyDate || ''
         });
 
         // Merge existing container data with the full CONTAINER_TYPES list
@@ -184,7 +186,7 @@ export default function DataSurveyEdit() {
       const payload = {
         houseOwner: formData.nama_kk,
         villageId: formData.villageId,
-        surveyDate: new Date().toISOString().split('T')[0],
+        surveyDate: formData.surveyDate ? new Date(formData.surveyDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         rtRw: formData.rtrw,
         address: formData.alamat,
         occupantCount: formData.jumlah_penghuni ? parseInt(formData.jumlah_penghuni) : null,
