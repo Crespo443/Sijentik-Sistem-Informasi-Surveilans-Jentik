@@ -420,7 +420,7 @@ export default function DataSurveyList() {
                   Dari Tanggal
                 </label>
                 <input
-                  className="w-full px-3 py-2 border border-border-subtle rounded bg-surface text-text-main placeholder-text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-sm min-h-[38px]"
+                  className="w-full px-3 py-2 border border-border-subtle rounded bg-surface text-text-main placeholder-text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-sm min-h-9.5"
                   type="date"
                   value={draftStartDate}
                   onChange={(e) => setDraftStartDate(e.target.value)}
@@ -431,7 +431,7 @@ export default function DataSurveyList() {
                   Sampai Tanggal
                 </label>
                 <input
-                  className="w-full px-3 py-2 border border-border-subtle rounded bg-surface text-text-main placeholder-text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-sm min-h-[38px]"
+                  className="w-full px-3 py-2 border border-border-subtle rounded bg-surface text-text-main placeholder-text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-sm min-h-9.5"
                   type="date"
                   value={draftEndDate}
                   onChange={(e) => setDraftEndDate(e.target.value)}

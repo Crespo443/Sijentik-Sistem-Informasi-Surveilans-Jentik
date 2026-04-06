@@ -46,7 +46,7 @@ export default function LaporanPeriodik() {
       <ReportHeader onDownloadCSV={handleDownloadCSV} />
 
       <main className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-        <div className="max-w-[1400px] mx-auto space-y-5">
+        <div className="max-w-350 mx-auto space-y-5">
           <FilterSection
             periodeType={periodeType}
             setPeriodeType={setPeriodeType}

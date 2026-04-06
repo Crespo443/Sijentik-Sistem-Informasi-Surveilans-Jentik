@@ -60,7 +60,7 @@ export default function ReportHeader({
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="w-64 z-[100]">
+        <div className="w-64 z-100">
           <Select
             options={healthCenters.map((hc) => ({
               value: hc.id,

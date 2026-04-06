@@ -130,7 +130,7 @@ export function FilterSection({
 
         <div>
           <button
-            className="w-full bg-primary text-white px-4 py-[9px] rounded text-sm font-semibold hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-primary text-white px-4 py-2.25 rounded text-sm font-semibold hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
             onClick={applyFilters}
             disabled={loading}
           >

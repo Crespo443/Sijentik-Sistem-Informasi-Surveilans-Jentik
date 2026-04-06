@@ -156,7 +156,7 @@ const RegionalSummary = ({
                     const isWilayah = metric === "abjWilayah";
                     const wilayahNull = isWilayah && d.abjWilayahNull;
                     return (
-                      <div className="bg-white p-3 border border-slate-200 shadow-lg rounded-lg min-w-[170px]">
+                      <div className="bg-white p-3 border border-slate-200 shadow-lg rounded-lg min-w-42.5">
                         <p className="font-bold text-sm text-slate-800 mb-2">
                           {d.name}
                         </p>

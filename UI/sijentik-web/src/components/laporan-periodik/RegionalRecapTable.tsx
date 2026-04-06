@@ -48,7 +48,7 @@ export function RegionalRecapTable({
           </span>
         </div>
       </div>
-      <div className="overflow-x-auto no-scrollbar max-h-[500px]">
+      <div className="overflow-x-auto no-scrollbar max-h-125">
         <table className="w-full text-left border-collapse text-sm">
           <thead className="sticky top-0 bg-slate-50 z-10">
             <tr className="border-b border-border-subtle">
@@ -110,7 +110,7 @@ export function RegionalRecapTable({
               sortedRegionalData.map((row: any, idx: number) => (
                 <tr
                   key={idx}
-                  className="hover:bg-gradient-to-r hover:from-[rgba(101,4,174,0.03)] hover:to-transparent transition-colors"
+                  className="hover:bg-liner-to-r hover:from-[rgba(101,4,174,0.03)] hover:to-transparent transition-colors"
                 >
                   <td className="px-5 py-3.5">
                     <p className="font-semibold text-text-main">{row.name}</p>

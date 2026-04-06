@@ -101,7 +101,7 @@ const DashboardTopSection = ({
         </div>
       </div>
 
-      <div className="shrink-0 flex items-center gap-2 z-30 relative min-w-[200px]">
+      <div className="shrink-0 flex items-center gap-2 z-30 relative min-w-50">
         <Select
           options={[...DASHBOARD_PERIOD_OPTIONS]}
           value={{

@@ -66,7 +66,7 @@ export default function DataSurveyMap() {
 
       {/* Info Card Overlay Top Right */}
       <div className="bg-surface rounded-lg border border-border-subtle shadow-card flex-1 relative overflow-hidden isolate">
-        <div className="absolute top-4 right-4 z-[400] bg-white/95 backdrop-blur rounded-lg shadow-lg border border-border-subtle p-4 w-72">
+        <div className="absolute top-4 right-4 z-400 bg-white/95 backdrop-blur rounded-lg shadow-lg border border-border-subtle p-4 w-72">
           <h3 className="text-sm font-bold text-text-main mb-2">Detail Lokasi</h3>
           <div className="space-y-2 text-sm">
             <div>

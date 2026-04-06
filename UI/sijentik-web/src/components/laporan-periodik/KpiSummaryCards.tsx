@@ -6,7 +6,7 @@ export function KpiSummaryCards({ kpis }: KpiSummaryCardsProps) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
       <div className="kpi-card bg-surface rounded-lg border border-border-subtle shadow-card overflow-hidden hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200">
-        <div className="h-[3px] rounded-b-sm bg-gradient-to-r from-[#6504ae] via-[rgb(168,85,247)] to-[#c084fc]"></div>
+        <div className="h-0.75 rounded-b-sm bg-linear-to-r from-[#6504ae] via-[rgb(168,85,247)] to-[#c084fc]"></div>
         <div className="p-5">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-text-muted text-xs font-semibold uppercase tracking-wider">
@@ -18,7 +18,7 @@ export function KpiSummaryCards({ kpis }: KpiSummaryCardsProps) {
               </span>
             </div>
           </div>
-          <div className="text-3xl font-bold text-text-main font-heading tracking-tight font-mono">
+          <div className="text-3xl font-bold text-text-main font-heading tracking-tight">
             {kpis?.totalSurveys || 0}
           </div>
           <div className="mt-2 text-xs text-text-muted">
@@ -34,7 +34,7 @@ export function KpiSummaryCards({ kpis }: KpiSummaryCardsProps) {
       </div>
 
       <div className="kpi-card bg-surface rounded-lg border border-border-subtle shadow-card overflow-hidden hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200">
-        <div className="h-[3px] rounded-b-sm bg-gradient-to-r from-danger to-red-400"></div>
+        <div className="h-0.75 rounded-b-sm bg-linear-to-r from-danger to-red-400"></div>
         <div className="p-5">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-text-muted text-xs font-semibold uppercase tracking-wider">
@@ -46,7 +46,7 @@ export function KpiSummaryCards({ kpis }: KpiSummaryCardsProps) {
               </span>
             </div>
           </div>
-          <div className="text-3xl font-bold text-danger font-heading tracking-tight font-mono">
+          <div className="text-3xl font-bold text-danger font-heading tracking-tight">
             {kpis?.positiveHouses || 0}
           </div>
           <div className="mt-2 text-xs text-text-muted">
@@ -66,7 +66,7 @@ export function KpiSummaryCards({ kpis }: KpiSummaryCardsProps) {
       </div>
 
       <div className="kpi-card bg-surface rounded-lg border border-border-subtle shadow-card overflow-hidden hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200">
-        <div className="h-[3px] rounded-b-sm bg-gradient-to-r from-success to-green-400"></div>
+        <div className="h-0.75 rounded-b-sm bg-linear-to-r from-success to-green-400"></div>
         <div className="p-5">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-text-muted text-xs font-semibold uppercase tracking-wider">
@@ -78,7 +78,7 @@ export function KpiSummaryCards({ kpis }: KpiSummaryCardsProps) {
               </span>
             </div>
           </div>
-          <div className="text-3xl font-bold text-success font-heading tracking-tight font-mono">
+          <div className="text-3xl font-bold text-success font-heading tracking-tight">
             {kpis?.abjSurvei || 0}%
           </div>
           <div className="mt-2 text-xs text-text-muted">
@@ -94,7 +94,7 @@ export function KpiSummaryCards({ kpis }: KpiSummaryCardsProps) {
       </div>
 
       <div className="kpi-card bg-surface rounded-lg border border-border-subtle shadow-card overflow-hidden hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200">
-        <div className="h-[3px] rounded-b-sm bg-gradient-to-r from-warning to-yellow-400"></div>
+        <div className="h-0.75 rounded-b-sm bg-linear-to-r from-warning to-yellow-400"></div>
         <div className="p-5">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-text-muted text-xs font-semibold uppercase tracking-wider">
@@ -106,7 +106,7 @@ export function KpiSummaryCards({ kpis }: KpiSummaryCardsProps) {
               </span>
             </div>
           </div>
-          <div className="text-3xl font-bold text-warning font-heading tracking-tight font-mono">
+          <div className="text-3xl font-bold text-warning tracking-tight font-mono">
             {kpis?.abjWilayah !== null ? `${kpis?.abjWilayah}%` : "N/A"}
           </div>
           <div className="mt-2 text-xs text-text-muted">
