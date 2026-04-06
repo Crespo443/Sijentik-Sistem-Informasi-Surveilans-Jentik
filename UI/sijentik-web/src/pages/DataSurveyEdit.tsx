@@ -5,6 +5,33 @@ import api from '../lib/api';
 import { useNavigate, useParams } from 'react-router-dom';
 import Select from 'react-select';
 import { selectCustomStyles } from '../lib/selectCustomStyles';
+
+const CONTAINER_TYPES = [
+  { name: 'Bak Mandi', category: 'DAILY' },
+  { name: 'Bak WC', category: 'DAILY' },
+  { name: 'Tempayan / Gentong', category: 'DAILY' },
+  { name: 'Drum', category: 'DAILY' },
+  { name: 'Ember', category: 'DAILY' },
+  { name: 'Dispenser', category: 'DAILY' },
+  { name: 'Penampungan Air Hujan (PAH)', category: 'DAILY' },
+  { name: 'TPA Lainnya', category: 'DAILY' },
+  
+  { name: 'Ban Bekas', category: 'NON_DAILY' },
+  { name: 'Kaleng Bekas', category: 'NON_DAILY' },
+  { name: 'Pot Bunga', category: 'NON_DAILY' },
+  { name: 'Tempat Minum Hewan', category: 'NON_DAILY' },
+  { name: 'Akuarium', category: 'NON_DAILY' },
+  { name: 'Pecahan Kaca', category: 'NON_DAILY' },
+  { name: 'Barang Bekas', category: 'NON_DAILY' },
+  { name: 'Non TPA Lainnya', category: 'NON_DAILY' },
+  
+  { name: 'Lubang Pohon', category: 'NATURAL' },
+  { name: 'Potongan Bambu', category: 'NATURAL' },
+  { name: 'Pelepah Daun', category: 'NATURAL' },
+  { name: 'Tempurung Kelapa', category: 'NATURAL' },
+  { name: 'Alam Lainnya', category: 'NATURAL' },
+];
+
 const INTERVENTION_TYPES = [
   'Menguras TPA (Tempat Penampungan Air)',
   'Menutup TPA (Tempat Penampungan Air)',
@@ -36,7 +63,14 @@ export default function DataSurveyEdit() {
     petugas: ''
   });
 
-  const [containerData, setContainerData] = useState<any[]>([]);
+  const [containerData, setContainerData] = useState(
+    CONTAINER_TYPES.map(c => ({
+      ...c,
+      inspectedCount: 0 as number | '',
+      positiveCount: 0 as number | ''
+    }))
+  );
+
   const [interventionData, setInterventionData] = useState<any[]>([]);
 
   useEffect(() => {
@@ -63,8 +97,18 @@ export default function DataSurveyEdit() {
           petugas: s.surveyorName || '-'
         });
 
-        // Initialize containers based on fetched data, fallback to empty array if missing
-        setContainerData(s.containers || []);
+        // Merge existing container data with the full CONTAINER_TYPES list
+        const mergedContainers = CONTAINER_TYPES.map(ct => {
+          const existing = (s.containers || []).find(
+            (c: any) => c.containerName === ct.name && c.category === ct.category
+          );
+          return {
+            ...ct,
+            inspectedCount: existing ? existing.inspectedCount : 0,
+            positiveCount: existing ? existing.positiveCount : 0
+          };
+        });
+        setContainerData(mergedContainers);
         
         // Match existing interventions
         const loadedInterventions = INTERVENTION_TYPES.map(name => {
@@ -91,9 +135,15 @@ export default function DataSurveyEdit() {
   };
 
   const handleContainerChange = (index: number, field: 'inspectedCount' | 'positiveCount', value: string) => {
-    const numValue = parseInt(value) || 0;
     const newData = [...containerData];
-    newData[index][field] = numValue;
+    if (value === '') {
+      newData[index][field] = '' as any;
+    } else {
+      const numValue = parseInt(value);
+      if (!isNaN(numValue)) {
+        newData[index][field] = numValue;
+      }
+    }
     setContainerData(newData);
   };
 
@@ -101,6 +151,26 @@ export default function DataSurveyEdit() {
     const newData = [...interventionData];
     newData[index].isDone = checked;
     setInterventionData(newData);
+  };
+
+  const handleGetLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setFormData({
+            ...formData,
+            lat: position.coords.latitude.toString(),
+            lng: position.coords.longitude.toString()
+          });
+          alert('Lokasi berhasil didapatkan!');
+        },
+        () => {
+          alert('Gagal mendapatkan lokasi. Pastikan GPS aktif.');
+        }
+      );
+    } else {
+      alert('Geolocation tidak didukung di browser ini.');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -112,14 +182,21 @@ export default function DataSurveyEdit() {
       const payload = {
         houseOwner: formData.nama_kk,
         villageId: formData.villageId,
-        surveyDate: new Date().toISOString().split('T')[0], // Use current date for update or keep original if passed
+        surveyDate: new Date().toISOString().split('T')[0],
         rtRw: formData.rtrw,
         address: formData.alamat,
         occupantCount: formData.jumlah_penghuni ? parseInt(formData.jumlah_penghuni) : null,
         latitude: formData.lat ? parseFloat(formData.lat) : null,
         longitude: formData.lng ? parseFloat(formData.lng) : null,
         notes: formData.catatan,
-        containers: containerData,
+        containers: containerData
+          .filter(c => (Number(c.inspectedCount) || 0) > 0)
+          .map(c => ({
+            ...c,
+            containerName: c.name,
+            inspectedCount: Number(c.inspectedCount) || 0,
+            positiveCount: Number(c.positiveCount) || 0
+          })),
         interventions: interventionData
       };
 
@@ -158,7 +235,7 @@ export default function DataSurveyEdit() {
                 </div>
                 <h2 className="text-base font-bold font-heading text-text-main">1. Data Rumah & Lokasi</h2>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                 <div className="space-y-4">
                   <div>
                     <label className="text-sm font-medium text-text-main mb-1 block">Puskesmas</label>
@@ -193,16 +270,9 @@ export default function DataSurveyEdit() {
                     <input 
                       id="rtrw" name="rtrw" type="text" 
                       className="w-full px-3 py-2 text-sm border border-border-subtle rounded bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" 
+                      placeholder="001/005"
                       value={formData.rtrw} onChange={handleInputChange}
                     />
-                  </div>
-                  <div>
-                    <label htmlFor="alamat" className="text-sm font-medium text-text-main mb-1 block">Alamat Lengkap</label>
-                    <textarea 
-                      id="alamat" name="alamat" rows={2}
-                      className="w-full px-3 py-2 text-sm border border-border-subtle rounded bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors resize-none" 
-                      value={formData.alamat} onChange={handleInputChange}
-                    ></textarea>
                   </div>
                 </div>
                 <div className="space-y-4">
@@ -211,6 +281,7 @@ export default function DataSurveyEdit() {
                     <input 
                       id="nama_kk" name="nama_kk" type="text" required
                       className="w-full px-3 py-2 text-sm border border-border-subtle rounded bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" 
+                      placeholder="Nama Lengkap"
                       value={formData.nama_kk} onChange={handleInputChange}
                     />
                   </div>
@@ -219,62 +290,147 @@ export default function DataSurveyEdit() {
                     <input 
                       id="jumlah_penghuni" name="jumlah_penghuni" type="number" min="0"
                       className="w-full px-3 py-2 text-sm border border-border-subtle rounded bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" 
+                      placeholder="Orang"
                       value={formData.jumlah_penghuni} onChange={handleInputChange}
                     />
                   </div>
                 </div>
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+                <div>
+                  <label htmlFor="alamat" className="text-sm font-medium text-text-main mb-1 block">Alamat Lengkap</label>
+                  <textarea 
+                    id="alamat" name="alamat" rows={2}
+                    className="w-full px-3 py-2 text-sm border border-border-subtle rounded bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors resize-none" 
+                    placeholder="Jl. Merdeka No. 123…"
+                    value={formData.alamat} onChange={handleInputChange}
+                  ></textarea>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-sm font-medium text-text-main mb-1 block">Koordinat GPS</span>
+                  <button onClick={handleGetLocation} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary/5 text-primary border border-primary/20 rounded text-sm font-semibold hover:bg-primary/10 transition-colors" type="button">
+                    <span className="material-symbols-outlined text-[18px]">my_location</span>
+                    {formData.lat ? 'Koordinat Didapatkan ✓' : 'Ambil Koordinat GPS'}
+                  </button>
+                  {formData.lat && <p className="text-xs text-text-muted text-center">{formData.lat}, {formData.lng}</p>}
+                </div>
+              </div>
             </div>
 
-            {/* Section 2: Kontainer Recorded */}
+            {/* Section 2: Kontainer Sehari-hari */}
             <div className="bg-surface border border-border-subtle shadow-card rounded p-6 mb-5">
               <div className="flex items-center gap-3 mb-5">
                 <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
                   <span className="material-symbols-outlined text-primary text-[18px]">water_drop</span>
                 </div>
-                <h2 className="text-base font-bold font-heading text-text-main">2. Kontainer (Tercatat)</h2>
+                <h2 className="text-base font-bold font-heading text-text-main">2. Kontainer Sehari-hari</h2>
               </div>
-              
-              {containerData.length === 0 ? (
-                <p className="text-sm text-text-muted italic">Tidak ada data kontainer yang dicatat pada survei ini.</p>
-              ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-border-subtle">
+                      <th className="px-4 py-2.5 text-xs font-semibold text-text-muted uppercase tracking-wider">Jenis Kontainer</th>
+                      <th className="px-4 py-2.5 text-xs font-semibold text-text-muted uppercase tracking-wider text-center w-32">Diperiksa</th>
+                      <th className="px-4 py-2.5 text-xs font-semibold text-text-muted uppercase tracking-wider text-center w-32">Positif (+)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-subtle">
+                    {containerData.map((c, i) => c.category === 'DAILY' && (
+                      <tr key={i} className="hover:bg-slate-50/50">
+                        <td className="px-4 py-2.5 font-medium text-text-main">{c.name}</td>
+                        <td className="px-4 py-2">
+                          <input 
+                            className="w-full px-2 py-1 text-sm border border-border-subtle rounded text-center focus:border-primary outline-none" 
+                            type="number" min="0" value={c.inspectedCount} 
+                            onFocus={(e) => e.target.select()}
+                            onChange={e => handleContainerChange(i, 'inspectedCount', e.target.value)}
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <input 
+                            className="w-full px-2 py-1 text-sm border border-border-subtle rounded text-center focus:border-primary outline-none" 
+                            type="number" min="0" value={c.positiveCount} 
+                            onFocus={(e) => e.target.select()}
+                            onChange={e => handleContainerChange(i, 'positiveCount', e.target.value)}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Section 3 & 4 Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+              {/* Section 3: Kontainer Non Sehari-hari */}
+              <div className="bg-surface border border-border-subtle shadow-card rounded p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-primary text-[18px]">inventory_2</span>
+                  </div>
+                  <h2 className="text-base font-bold font-heading text-text-main">3. Non Sehari-hari</h2>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left border-collapse">
                     <thead>
                       <tr className="bg-slate-50 border-b border-border-subtle">
-                        <th className="px-4 py-2.5 text-xs font-semibold text-text-muted uppercase tracking-wider">Kategori</th>
-                        <th className="px-4 py-2.5 text-xs font-semibold text-text-muted uppercase tracking-wider">Jenis Kontainer</th>
-                        <th className="px-4 py-2.5 text-xs font-semibold text-text-muted uppercase tracking-wider text-center w-32">Diperiksa</th>
-                        <th className="px-4 py-2.5 text-xs font-semibold text-text-muted uppercase tracking-wider text-center w-32">Positif (+)</th>
+                        <th className="px-3 py-2.5 text-xs font-semibold text-text-muted uppercase tracking-wider">Jenis</th>
+                        <th className="px-3 py-2.5 text-xs font-semibold text-text-muted uppercase tracking-wider text-center w-20">Periksa</th>
+                        <th className="px-3 py-2.5 text-xs font-semibold text-text-muted uppercase tracking-wider text-center w-20">Positif</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border-subtle">
-                      {containerData.map((c, i) => (
-                        <tr key={c.id || i} className="hover:bg-slate-50/50">
-                          <td className="px-4 py-2.5 text-xs text-text-muted">
-                            {c.category === 'DAILY' ? 'Harian' : c.category === 'NON_DAILY' ? 'Non Harian' : 'Alamiah'}
+                      {containerData.map((c, i) => c.category === 'NON_DAILY' && (
+                        <tr key={i} className="hover:bg-slate-50/50">
+                          <td className="px-3 py-2 font-medium text-text-main">{c.name}</td>
+                          <td className="px-3 py-1.5">
+                            <input className="w-full px-2 py-1 text-sm border border-border-subtle rounded text-center focus:border-primary outline-none" type="number" min="0" value={c.inspectedCount} onFocus={(e) => e.target.select()} onChange={e => handleContainerChange(i, 'inspectedCount', e.target.value)} />
                           </td>
-                          <td className="px-4 py-2.5 font-medium text-text-main">{c.containerName}</td>
-                          <td className="px-4 py-2">
-                            <input 
-                              className="w-full px-2 py-1 text-sm border border-border-subtle rounded text-center focus:border-primary outline-none" 
-                              type="number" min="0" value={c.inspectedCount || 0} 
-                              onChange={e => handleContainerChange(i, 'inspectedCount', e.target.value)}
-                            />
-                          </td>
-                          <td className="px-4 py-2">
-                            <input 
-                              className="w-full px-2 py-1 text-sm border border-border-subtle rounded text-center focus:border-primary outline-none" 
-                              type="number" min="0" value={c.positiveCount || 0} 
-                              onChange={e => handleContainerChange(i, 'positiveCount', e.target.value)}
-                            />
+                          <td className="px-3 py-1.5">
+                            <input className="w-full px-2 py-1 text-sm border border-border-subtle rounded text-center focus:border-primary outline-none" type="number" min="0" value={c.positiveCount} onFocus={(e) => e.target.select()} onChange={e => handleContainerChange(i, 'positiveCount', e.target.value)} />
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              )}
+              </div>
+
+              {/* Section 4: Kontainer Alam */}
+              <div className="bg-surface border border-border-subtle shadow-card rounded p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-primary text-[18px]">nature</span>
+                  </div>
+                  <h2 className="text-base font-bold font-heading text-text-main">4. Kontainer Alam</h2>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-border-subtle">
+                        <th className="px-3 py-2.5 text-xs font-semibold text-text-muted uppercase tracking-wider">Jenis</th>
+                        <th className="px-3 py-2.5 text-xs font-semibold text-text-muted uppercase tracking-wider text-center w-20">Periksa</th>
+                        <th className="px-3 py-2.5 text-xs font-semibold text-text-muted uppercase tracking-wider text-center w-20">Positif</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border-subtle">
+                      {containerData.map((c, i) => c.category === 'NATURAL' && (
+                        <tr key={i} className="hover:bg-slate-50/50">
+                          <td className="px-3 py-2 font-medium text-text-main">{c.name}</td>
+                          <td className="px-3 py-1.5">
+                            <input className="w-full px-2 py-1 text-sm border border-border-subtle rounded text-center focus:border-primary outline-none" type="number" min="0" value={c.inspectedCount} onFocus={(e) => e.target.select()} onChange={e => handleContainerChange(i, 'inspectedCount', e.target.value)} />
+                          </td>
+                          <td className="px-3 py-1.5">
+                            <input className="w-full px-2 py-1 text-sm border border-border-subtle rounded text-center focus:border-primary outline-none" type="number" min="0" value={c.positiveCount} onFocus={(e) => e.target.select()} onChange={e => handleContainerChange(i, 'positiveCount', e.target.value)} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
 
             {/* Section 5: PSN 3M Plus */}
@@ -283,8 +439,9 @@ export default function DataSurveyEdit() {
                 <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
                   <span className="material-symbols-outlined text-primary text-[18px]">task_alt</span>
                 </div>
-                <h2 className="text-base font-bold font-heading text-text-main">3. Tindakan PSN 3M Plus</h2>
+                <h2 className="text-base font-bold font-heading text-text-main">5. Tindakan PSN 3M Plus</h2>
               </div>
+              <p className="text-sm text-text-muted mb-4">Centang aktivitas yang dilakukan oleh keluarga/pemilik rumah:</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
                 {interventionData.map((inv, i) => (
                   <label key={i} className={`flex items-center gap-3 p-3 border border-border-subtle rounded hover:bg-slate-50 cursor-pointer transition-colors ${i === 6 ? 'md:col-span-2' : ''}`}>
@@ -305,6 +462,7 @@ export default function DataSurveyEdit() {
                   <textarea 
                     id="catatan" name="catatan" rows={3}
                     className="w-full px-3 py-2 text-sm border border-border-subtle rounded bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors resize-none" 
+                    placeholder="Masukkan catatan tambahan…"
                     value={formData.catatan} onChange={handleInputChange}
                   ></textarea>
                 </div>

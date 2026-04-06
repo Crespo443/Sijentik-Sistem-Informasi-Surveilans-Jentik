@@ -22,7 +22,8 @@ const CONTAINER_TYPES = [
   { name: 'Tempat Minum Hewan', category: 'NON_DAILY' },
   { name: 'Akuarium', category: 'NON_DAILY' },
   { name: 'Pecahan Kaca', category: 'NON_DAILY' },
-  { name: 'Barang Bekas Lainnya', category: 'NON_DAILY' },
+  { name: 'Barang Bekas', category: 'NON_DAILY' },
+  { name: 'Non TPA Lainnya', category: 'NON_DAILY' },
   
   { name: 'Lubang Pohon', category: 'NATURAL' },
   { name: 'Potongan Bambu', category: 'NATURAL' },
@@ -425,9 +426,9 @@ export default function SurveyInput() {
             </div>
 
             <div className="flex justify-end gap-3 mb-10">
-              <Button type="button" variant="secondary" icon="refresh" onClick={() => window.location.reload()}>Reset Form</Button>
+              <Button type="button" variant="secondary" icon="refresh" onClick={() => window.location.reload()}>Reset</Button>
               <Button type="submit" variant="primary" icon="check_circle" disabled={loading}>
-                {loading ? 'Menyimpan...' : 'Selesaikan Survei'}
+                {loading ? 'Menyimpan...' : 'Simpan'}
               </Button>
             </div>
           </form>
