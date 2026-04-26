@@ -5,9 +5,7 @@ import AuthEventBridge from "./components/AuthEventBridge.tsx";
 import PageLoader from "./components/common/PageLoader.tsx";
 
 const AdminLayout = lazy(() => import("./layouts/AdminLayout.tsx"));
-const Dashboard = lazy(
-  () => import(/* @vite-prefetch */ "./pages/Dashboard.tsx"),
-);
+const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
 const PetaRisiko = lazy(() => import("./pages/PetaRisiko.tsx"));
 const DataSurveyList = lazy(() => import("./pages/DataSurveyList.tsx"));
 const DataSurveyDetail = lazy(() => import("./pages/DataSurveyDetail.tsx"));
