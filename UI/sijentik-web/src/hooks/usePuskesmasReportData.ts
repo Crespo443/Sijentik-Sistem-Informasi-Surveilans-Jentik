@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { NavigateFunction } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import api from "../lib/api";
 import {
   calculateDensityFigure,
@@ -17,17 +18,25 @@ type UsePuskesmasReportDataArgs = {
   navigate: NavigateFunction;
 };
 
+interface ProcessedSurvey extends AnyObject {
+  _surveyYear: number;
+  _surveyMonth: number;
+  _surveyTime: number;
+  _searchHaystack: string;
+  _stats: {
+    inspected: number;
+    positive: number;
+    hasPositive: boolean;
+    containerIndex: number;
+  };
+}
+
 export const usePuskesmasReportData = ({
   id,
   navigate,
 }: UsePuskesmasReportDataArgs) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [pkm, setPkm] = useState<AnyObject | null>(null);
-  const [healthCenters, setHealthCenters] = useState<AnyObject[]>([]);
-  const [surveys, setSurveys] = useState<AnyObject[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [year, setYear] = useState(
     searchParams.get("year") || String(new Date().getFullYear()),
   );
@@ -51,95 +60,112 @@ export const usePuskesmasReportData = ({
     setSearchParams(nextParams, { replace: true });
   }, [searchTerm, setSearchParams, villageFilter, year]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!id) return;
+  // Use React Query to cache the heavy surveys request
+  const { data, isLoading: loading, isError: error } = useQuery({
+    queryKey: ["puskesmas-report-data", id],
+    queryFn: async () => {
+      const [healthCenterRes, surveyRes] = await Promise.all([
+        api.get("/health-center"),
+        api.get("/survey?limit=5000"),
+      ]);
 
-      setLoading(true);
-      setError(false);
+      const healthCenterList = Array.isArray(healthCenterRes.data)
+        ? healthCenterRes.data
+        : [];
 
-      try {
-        const [healthCenterRes, surveyRes] = await Promise.all([
-          api.get("/health-center"),
-          api.get("/survey?limit=5000"),
-        ]);
+      const resolvedId = isUuid(id) ? id : healthCenterList[0]?.id;
 
-        const healthCenterList = Array.isArray(healthCenterRes.data)
-          ? healthCenterRes.data
-          : [];
-        setHealthCenters(healthCenterList);
-
-        const resolvedId = isUuid(id) ? id : healthCenterList[0]?.id;
-
-        if (!resolvedId) {
-          setError(true);
-          return;
-        }
-
-        if (resolvedId !== id) {
-          navigate(`/laporan/puskesmas/${resolvedId}`, { replace: true });
-          return;
-        }
-
-        const [pkmRes] = await Promise.all([
-          api.get(`/health-center/${resolvedId}`),
-        ]);
-
-        setPkm(pkmRes.data);
-
-        const surveyList = surveyRes.data?.data ?? surveyRes.data ?? [];
-        setSurveys(Array.isArray(surveyList) ? surveyList : []);
-
-        const availableYears = Array.from(
-          new Set(
-            (Array.isArray(surveyList) ? surveyList : [])
-              .map((survey: AnyObject) =>
-                new Date(survey.surveyDate).getFullYear(),
-              )
-              .filter((value: number) => Number.isFinite(value)),
-          ),
-        ).sort((a, b) => b - a);
-
-        if (
-          availableYears.length > 0 &&
-          !availableYears.includes(Number(year))
-        ) {
-          setYear(String(availableYears[0]));
-        }
-      } catch (fetchError) {
-        console.error("Failed to fetch puskesmas report data", fetchError);
-        setError(true);
-      } finally {
-        setLoading(false);
+      if (!resolvedId) {
+        throw new Error("No health center available");
       }
-    };
 
-    fetchData();
-  }, [id, navigate]);
+      if (resolvedId !== id) {
+        return {
+          healthCenters: healthCenterList,
+          redirectId: resolvedId,
+          pkm: null,
+          surveys: []
+        };
+      }
 
+      const pkmRes = await api.get(`/health-center/${resolvedId}`);
+
+      const surveyList = surveyRes.data?.data ?? surveyRes.data ?? [];
+      const rawArray = Array.isArray(surveyList) ? surveyList : [];
+      
+      const processedSurveys: ProcessedSurvey[] = rawArray.map((survey: AnyObject) => {
+        const d = new Date(survey.surveyDate);
+        
+        const villageName = survey.village?.name || "";
+        const searchHaystack = [
+          villageName,
+          survey.surveyorName,
+          survey.houseOwner,
+          survey.address,
+          survey.rtRw,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return {
+          ...survey,
+          _surveyYear: d.getFullYear(),
+          _surveyMonth: d.getMonth(),
+          _surveyTime: d.getTime(),
+          _searchHaystack: searchHaystack,
+          _stats: getSurveyStats(survey)
+        };
+      });
+
+      return {
+        healthCenters: healthCenterList,
+        pkm: pkmRes.data,
+        surveys: processedSurveys
+      };
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnWindowFocus: false,
+  });
+
+  const pkm = data?.pkm || null;
+  const healthCenters = data?.healthCenters || [];
+  const surveys = data?.surveys || [];
+
+  // Handle redirect outside queryFn
+  useEffect(() => {
+    if ((data as any)?.redirectId && (data as any).redirectId !== id) {
+      navigate(`/laporan/puskesmas/${(data as any).redirectId}`, { replace: true });
+    }
+  }, [data, id, navigate]);
+
+  // Determine available years
   const availableYears = useMemo(() => {
     const years = new Set<number>();
-
     surveys.forEach((survey) => {
-      const surveyYear = new Date(survey.surveyDate).getFullYear();
-      if (Number.isFinite(surveyYear)) years.add(surveyYear);
+      if (Number.isFinite(survey._surveyYear)) years.add(survey._surveyYear);
     });
-
     const currentYear = new Date().getFullYear();
     years.add(currentYear);
-
     return Array.from(years).sort((a, b) => b - a);
   }, [surveys]);
+
+  // Sync year state if available years change
+  useEffect(() => {
+    if (availableYears.length > 0 && !availableYears.includes(Number(year))) {
+      setYear(String(availableYears[0]));
+    }
+  }, [availableYears, year]);
 
   const yearSurveys = useMemo(() => {
     if (!pkm) return [];
     const pkmVillageIds = new Set(
       (pkm.district?.villages || []).map((village: AnyObject) => village.id),
     );
+    const targetYear = Number(year);
 
     return surveys.filter((survey) => {
-      const surveyYear = new Date(survey.surveyDate).getFullYear();
-      if (surveyYear !== Number(year)) return false;
+      if (survey._surveyYear !== targetYear) return false;
       if (pkmVillageIds.size === 0) return true;
       return pkmVillageIds.has(survey.villageId);
     });
@@ -151,34 +177,21 @@ export const usePuskesmasReportData = ({
     return yearSurveys.filter((survey) => {
       if (villageFilter && survey.villageId !== villageFilter) return false;
       if (!normalizedSearch) return true;
-
-      const villageName = survey.village?.name || "";
-      const searchHaystack = [
-        villageName,
-        survey.surveyorName,
-        survey.houseOwner,
-        survey.address,
-        survey.rtRw,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return searchHaystack.includes(normalizedSearch);
+      return survey._searchHaystack.includes(normalizedSearch);
     });
   }, [searchTerm, villageFilter, yearSurveys]);
 
   const summary = useMemo(() => {
     const totalRumah = yearSurveys.length;
     const rumahPositif = yearSurveys.filter(
-      (survey) => getSurveyStats(survey).hasPositive,
+      (survey) => survey._stats.hasPositive,
     ).length;
     const totalContainersInspected = yearSurveys.reduce(
-      (sum, survey) => sum + getSurveyStats(survey).inspected,
+      (sum, survey) => sum + survey._stats.inspected,
       0,
     );
     const totalContainersPositive = yearSurveys.reduce(
-      (sum, survey) => sum + getSurveyStats(survey).positive,
+      (sum, survey) => sum + survey._stats.positive,
       0,
     );
 
@@ -216,10 +229,10 @@ export const usePuskesmasReportData = ({
   const monthlyStats = useMemo(() => {
     return Array.from({ length: 12 }, (_, monthIndex) => {
       const monthSurveys = yearSurveys.filter(
-        (survey) => new Date(survey.surveyDate).getMonth() === monthIndex,
+        (survey) => survey._surveyMonth === monthIndex,
       );
       const positiveHouses = monthSurveys.filter(
-        (survey) => getSurveyStats(survey).hasPositive,
+        (survey) => survey._stats.hasPositive,
       ).length;
       const abj =
         monthSurveys.length > 0
@@ -243,22 +256,22 @@ export const usePuskesmasReportData = ({
         (survey) => survey.villageId === village.id,
       );
       const positiveHouses = villageSurveys.filter(
-        (survey) => getSurveyStats(survey).hasPositive,
+        (survey) => survey._stats.hasPositive,
       ).length;
       const houseIndex =
         villageSurveys.length > 0
           ? (positiveHouses / villageSurveys.length) * 100
           : 0;
+          
+      let maxTime = 0;
+      for (let i = 0; i < villageSurveys.length; i++) {
+        if (villageSurveys[i]._surveyTime > maxTime) {
+          maxTime = villageSurveys[i]._surveyTime;
+        }
+      }
+          
       const latestDate = villageSurveys.length
-        ? formatDate(
-            new Date(
-              Math.max(
-                ...villageSurveys.map((survey) =>
-                  new Date(survey.surveyDate).getTime(),
-                ),
-              ),
-            ),
-          )
+        ? formatDate(new Date(maxTime))
         : "-";
 
       return {
@@ -276,13 +289,10 @@ export const usePuskesmasReportData = ({
 
   const recentSurveys = useMemo(() => {
     return [...filteredSurveys]
-      .sort(
-        (a, b) =>
-          new Date(b.surveyDate).getTime() - new Date(a.surveyDate).getTime(),
-      )
+      .sort((a, b) => b._surveyTime - a._surveyTime)
       .slice(0, 5)
       .map((survey) => {
-        const stats = getSurveyStats(survey);
+        const stats = survey._stats;
         const hi = stats.hasPositive ? 100 : 0;
         const ci = stats.containerIndex;
 
@@ -316,10 +326,13 @@ export const usePuskesmasReportData = ({
         ? "bg-yellow-50 text-warning border-yellow-100"
         : "bg-red-50 text-danger border-red-100";
 
+  // Prevent returning data if we're in the middle of a redirect
+  const isRedirecting = (!isUuid(id) && healthCenters.length > 0) || !!(data as any)?.redirectId;
+
   return {
     pkm,
     healthCenters,
-    loading,
+    loading: loading || isRedirecting,
     error,
     year,
     setYear,
